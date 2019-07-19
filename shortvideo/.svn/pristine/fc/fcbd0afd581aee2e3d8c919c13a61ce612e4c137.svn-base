@@ -1,0 +1,328 @@
+<template>
+  <div class="companyManagement">
+    <div class="tabs-top">
+        <div class="tabs-top-name">
+          公司管理
+        </div>
+        <div class="tabs-top-addTask">
+          <Button type="info" @click="add">添加公司</Button>
+        </div>
+      </div>
+    <Modal
+        title="提示"
+        v-model="modal_remove"
+        @on-ok="okremove"
+        >
+        <p>确定删除吗?</p>
+    </Modal>
+
+    <Modal
+      v-model="modal"
+      title="添加公司"
+      @on-ok="ok"
+     >
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            公司名称：
+          </span>
+          <Input placeholder="公司名称" v-model="addgsname" style="width: auto" />
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="update_modal"
+      title="修改公司"
+      @on-ok="ok_update"
+     >
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            公司名称：
+          </span>
+          <Input placeholder="请输入公司名称" v-model="updategsname" style="width: auto" />
+        </div>
+      </div>
+    </Modal>
+    
+
+    <div class="hang">
+        <span class="qdName">公司名称：</span>
+        <Input v-model="gsname" placeholder="请输入公司名称" class="qdselect" />
+        <Button type="primary" class="search" @click="search">查询</Button>
+    </div>
+      <div class="table">
+        <Table stripe :columns="columns" :data="data"></Table>
+      </div>
+      <div class="pagediv">
+        <Page :total="zongcount" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+      </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'companyManagement',
+  data () {
+    return {
+      optsarr:[10,20,30,50,80,100],
+      updategsname:'',
+      updateid:'',
+      removeid:'',
+      update_modal:false,
+      modal_remove:false,
+      modal:false,
+      addgsname:'',
+      gsname:'',
+      zongcount:0,
+      page:1,
+      limit:0,
+      columns: [
+                    {
+                        title: 'ID',
+                        align:'center',
+                        key: 'id'
+                    },
+                    {
+                        title: '公司',
+                        align:'center',
+                        key: 'company'
+                    },
+                    {
+                        title: '时间',
+                        align:'center',
+                        key: 'addtime'
+                    },
+                    /*
+                    {
+                        title: '渠道数',
+                        key: 'num',
+                    },
+                    */
+                     {
+                        title: '操作',
+                        key: 'key15',
+                        width: 220,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.remove(params)
+                                        }
+                                    }
+                                }, '删除'),
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                       
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.bj(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                            ]);
+                        }
+                    }
+                ],
+             data:[],   
+    }
+  },
+  created:function(){
+    this.limit=(this.optsarr)[0];
+     this.list();
+  },
+  methods:{
+   ok_update:function(){
+     var _this=this;
+     this.$http({
+         method:'put',
+         url:_this.url+'/v1/company/updateCompany/'+this.updateid+'?company='+this.updategsname,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                _this.$Message.success('修改成功');
+                _this.page=1;
+                _this.list();
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+
+   },
+   ok:function(){
+     var _this=this;
+     this.$http({
+         method:'post',
+         url:_this.url+'/v1/company/saveCompany',
+         data:{"company":_this.addgsname},
+         success:function(response){
+                if(response.data.code==20000){
+                _this.$Message.success('添加成功');
+                _this.page=1;
+                _this.list();
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+   add:function(){
+     this.modal=true;
+   },
+   list:function(){
+     var _this=this;
+     this.$http({
+         method:'get',
+         url:_this.url+'/v1/company/findCompanyList?page='+this.page+'&limit='+this.limit+'&company='+this.gsname,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                 _this.zongcount=response.data.count;
+                 _this.listdom(response.data.data);
+                }else if(response.data.code==20003){
+                    _this.data=[];
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+   listdom:function(d){
+     this.data=[];
+     if(d.length>0){
+        for(var i=0;i<d.length;i++){
+          var obj={};
+          obj.id=d[i].id;
+          obj.company=d[i].company;
+          obj.addtime=this.$time(d[i].addtime);
+          obj.num=d[i].childCount;
+          (this.data).push(obj);
+        }
+     }
+   },
+   search:function(){
+      this.list();
+   },
+   changepage:function(v){
+     this.page=v;
+     this.list();
+   },
+    pagesizechange:function(v){
+        this.limit=v;
+        this.page=1;
+        this.list();
+      },
+   remove:function(params){
+     var _this=this;
+     this.removeid=params.row.id;
+      if(params.row.num*1>0){
+        this.$Message.warning('不可删除');
+      }else{
+        this.modal_remove=true;
+      };
+   },
+   okremove:function(){
+     this.removelist();
+   },
+   removelist:function(){
+     var _this=this;
+        this.$http({
+                method:'put',
+                url:_this.url+'/v1/company/updateCompanyState/'+this.removeid+'/0',
+                data:{},
+                success:function(response){
+                        if(response.data.code==20000){
+                        _this.$Message.success('删除成功');
+                        _this.page=1;
+                        _this.list();
+                        }else{
+                            _this.$Message.warning(response.data.msg);
+                          }
+                },
+                error:function(err){
+                    console.log(err);
+                },
+            })
+   },
+   bj:function(params){
+      this.updateid=params.row.id;
+      this.updategsname=params.row.company;
+      this.update_modal=true;
+   },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.table{
+  margin-top:30px;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+.search{
+  margin-right:30px;
+}
+.companyManagement{
+  padding:10px;
+}
+  .tabs-top {
+      width: 100%;
+      height: 50px;
+      border-bottom:solid 1px #cccccc;
+      line-height:40px;
+      padding-bottom:10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+</style>

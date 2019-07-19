@@ -1,0 +1,226 @@
+<template>
+  <div class="tab">
+     <div class="hang">
+          <span class="qdName">开始时间：</span>
+          <DatePicker type="date" clearable placeholder="请输入开始时间"  class="start" v-model='startTime' @on-change="start"></DatePicker>
+          <span class="qdName">结束时间：</span>
+          <DatePicker type="date" clearable placeholder="请输入结束时间" class="start" v-model='endTime' @on-change="end"></DatePicker>
+      </div>
+       <div class="hang">
+            <span class="qdName">任务类型：</span>
+            <Select v-model.trim="taskTypeId" clearable multiple class="qdselect">
+                <Option v-for="item in rwselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+            </Select>
+            <Button type="primary" class="subtj" @click="subtj">查询</Button>
+        </div>
+      <div class="Table">
+        <Table stripe :columns="columns1" :data="data1"></Table>
+      </div>
+<div class="pagediv">
+    <Page :total="zongcount" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+</div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'tab2',
+  data () {
+    return {
+      page:1,
+      limit:0,
+      startTime:'',
+      startT:'',
+      endTime:'',
+      endT:'',
+      zongcount:0,
+      optsarr:[10,20,30,50,80,100],
+      rwselect:[],
+      taskTypeId:'',
+      columns1:[],
+      showzd:[],
+      data1:[],
+    }
+  },
+  created:function(){
+    var ddnewdata = new Date(); 
+    var newdatay = ddnewdata.getFullYear(); 
+    var newdatam = this.$tozero(+ddnewdata.getMonth()+1);//获取当前月份的日期 
+    var newdatad = this.$tozero(ddnewdata.getDate()); 
+    this.startTime=newdatay+'-'+newdatam+'-'+newdatad;
+    this.endTime=newdatay+'-'+newdatam+'-'+newdatad;
+    this.startT=newdatay+'-'+newdatam+'-'+newdatad;
+    this.endT=newdatay+'-'+newdatam+'-'+newdatad;
+
+    this.limit=(this.optsarr)[0];
+    this.renwutype(); 
+    this.header();
+  },
+  methods:{
+    start:function(v){
+       this.startTime=v;
+       this.startT=v;
+    },
+    end:function(v){
+       this.endTime=v;
+       this.endT=v;
+    },
+     changepage:function(v){
+        this.page=v;
+        this.body();
+    },
+     pagesizechange:function(v){
+        this.limit=v;
+        this.page=1;
+        this.body();
+      },
+    subtj:function(){
+      this.body();
+    },
+    header:function(){
+       var _this=this;
+       this.$http({
+         method:'get',
+         url:_this.url+'/v1/head/getHead?dimension=typeFinish',
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                     _this.domheader(response.data.data);
+                }else{
+                       _this.$Message.warning(response.data.message);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+    },
+    domheader:function(d){
+        if(d.columns.length>0){
+        for(var i=0;i<d.columns.length;i++){
+          if((d.columns)[i].isShow==1){
+            (this.showzd).push((d.columns)[i].dbField);
+            var obj={};
+            if((d.columns)[i].type=='percent'){
+              obj.title=(d.columns)[i].showName+'(%)';
+            }else{
+              obj.title=(d.columns)[i].showName;
+            }
+            
+            obj.align='center';
+            obj.key=(d.columns)[i].dbField;
+            (this.columns1).push(obj);
+          }
+        }
+        if(this.columns1.length>0){
+            this.body();
+        }
+        
+      }
+    },
+    body:function(){
+      if(this.taskTypeId+''=='' || this.taskTypeId==undefined || this.taskTypeId=='undefined'){
+          this.taskTypeId='';
+      }
+      this.data1=[];
+      var _this=this;
+      this.$http({
+         method:'get',
+         url:_this.url+'/v1/taskDetail/findTypeFinishReport?page='+this.page+'&limit='+this.limit+'&startTime='+this.startT+'&endTime='+this.endT+'&taskTypeId='+this.taskTypeId,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                   _this.zongcount=response.data.count;
+                   _this.bodylist(response.data.data);
+                }else{
+                       _this.$Message.warning(response.data.message);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+    },
+    bodylist:function(d){
+     if(d.length>0){
+        var c=0;
+          for(var i=0;i<d.length;i++){
+            var obj={};
+              for(var v in d[i]){
+                obj[v]=d[i][v];
+                if(v=='finishCount'){
+                  c+=d[i][v];
+                }
+              }
+              (this.data1).push(obj);
+          }
+          (this.data1).push({'finishCount':c,'date':'总和'});
+      }
+    },
+    renwutype:function(){
+        var _this=this;
+        this.$http({
+         method:'get',
+         url:_this.url+'/v1/taskType/findTaskTypeForTaskSel',
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+                _this.rwselect=[];
+                if(response.data.data.length>0){
+                    var rwlist=response.data.data;
+                    for(var i=0;i<rwlist.length;i++){
+                        var obj={};
+                        var obj2={};
+                        obj.value=rwlist[i].id;
+                        obj.label=rwlist[i].name;
+                        
+                        (_this.rwselect).push(obj);
+                    }
+                }
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+   
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.tab{
+  padding:10px;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.Table{
+  margin-top:30px;
+}
+</style>

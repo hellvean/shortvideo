@@ -1,0 +1,162 @@
+<template>
+  <div class="fillmodel">
+          <div class="hang">
+              <span class="qdName">表名：</span>
+              <Input placeholder="请输入表名" class="qdselect" v-model.trim="name"/>
+              <Button type="primary" class="qdthree" @click="search">提交</Button>
+          </div>
+          <div class="botProgress">
+            <div class="Progress">
+              <Progress :percent="percent" />
+            </div>
+            <span class="count">共{{alldata}}条</span>
+          </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'fillmodel',
+  data () {
+    return {
+      name:'',
+      percent:0,
+      alldata:0,
+      ytccount:0,
+      timer:null,
+    }
+  },
+  components: { // 定义组件
+
+  },
+  destroyed: function () {
+   clearInterval(this.timer);
+  },
+  methods:{
+      search:function(){
+        if(this.name==''){
+          this.$Message.warning('请输入表名！');
+          return false
+        }
+        var _this=this;
+        clearInterval(_this.timer);
+        this.$http({
+            method:'get',
+            url:this.url+'/v1/miguUser/fillUserData?tableName='+_this.name,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   _this.alldata=response.data.data;
+                   _this.ytcdata();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+      },
+      ytcdata:function(){
+        var _this=this;
+         this.$http({
+            method:'get',
+            url:this.url+'/v1/miguUser/findFilledUserCount?tableName='+_this.name,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   _this.ytccount=response.data.data;
+                   if(_this.ytccount*1==0 || _this.alldata*1==0){
+                        _this.percent=0;
+                   }else{
+                        _this.percent=((_this.ytccount/_this.alldata)*100).toFixed(2);
+                   }
+                  
+                   _this.aa();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+      },
+       ytcdata2:function(){
+         var _this=this;
+         this.$http({
+            method:'get',
+            url:this.url+'/v1/miguUser/findFilledUserCount?tableName='+_this.name,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   _this.ytccount=response.data.data;
+                   if(_this.ytccount*1==0 || _this.alldata*1==0){
+                        _this.percent=0;
+                   }else{
+                        _this.percent=((_this.ytccount/_this.alldata)*100).toFixed(2);
+                   }
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+      },
+      aa:function(){
+       var _this=this;
+        _this.timer=setInterval(function(){
+          if(_this.ytccount==_this.alldata){
+            clearInterval(_this.timer);
+          }else{
+            _this.ytcdata2();
+          }          
+        },3000);
+      },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+ .hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdthree{
+    float:left;
+  }
+  .qdselect{
+  display:block;
+  float:left;
+  width:200px;
+  margin-right:30px;
+  }
+}
+.botProgress{
+  overflow:hidden;
+  margin-top:40px;
+  margin-left:30px;
+}
+.Progress{
+  width:50%;
+  float:left;
+}
+.count{
+  float:left;
+  margin-left:30px;
+  font-size:12px;
+  color:#666666;
+  line-height:20px;
+}
+</style>

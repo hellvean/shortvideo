@@ -1,0 +1,1786 @@
+<template>
+  <div class="taskordering">
+       <div class="tabs-top">
+        <div class="tabs-top-name">
+          任务订阅
+        </div>
+        <div class="tabs-top-addTask">
+          <Button type="info" @click="adddy">添加订购</Button>
+        </div>
+      </div>
+      <Modal
+      scrollable
+      v-model="modal_adddy"
+      title="添加订阅"
+      width='620px'
+      @on-ok=""
+      >
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            任务类型：
+          </span>
+          <Select v-model.trim="model_taskTypeId" filterable class="task-cz-value" @on-change='rewulextype'>
+            <Option v-for="item in model_rwselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            公司：
+          </span>
+          <Select v-model.trim="modal_channelId" filterable class="task-cz-value" @on-change="model_gschange">
+            <Option v-for="item in model_gsselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            渠道名称：
+          </span>
+          <Select v-model.trim="model_companyId" filterable class="task-cz-value">
+            <Option v-for="item in model_qdselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            app逻辑：
+          </span>
+          <Select v-model.trim="model_appljtype" multiple class="task-cz-value">
+            <Option v-for="item in model_appljselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz" style="display:none;">
+          <span class="task-cz-name">
+            是否需要用户：
+          </span>
+          <Select v-model.trim="model_sfneedyh" filterable class="task-cz-value">
+            <Option v-for="item in model_sfneedyhselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz" v-if="(updateid=='')">
+          <span class="task-cz-name">
+            开始时间：
+          </span>
+          <DatePicker type="date" placeholder="请选择开始时间" class="task-cz-value" v-model.trim="time0" @on-change="model_start"></DatePicker>
+        </div>
+        <div class="task-cz" v-if="(updateid=='')">
+          <span class="task-cz-name">
+            结束时间：
+          </span>
+          <DatePicker type="date" placeholder="请选择结束时间" class="task-cz-value" v-model.trim="time1" @on-change="model_end"></DatePicker>
+        </div>
+        <div class="task-cz" v-if="(updateid!='')">
+          <span class="task-cz-name">
+            执行时间：
+          </span>
+          <DatePicker type="date" placeholder="Select date" class="task-cz-value" readonly v-model.trim="time2"></DatePicker>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            支付类型：
+          </span>
+          <!--
+          <Select v-model.trim="model_zftype" filterable class="task-cz-value">
+            <Option v-for="item in model_zftypelist" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+          -->
+          <Input placeholder="请输入支付类型"  v-model.trim="model_zftype" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            书籍类型：
+          </span>
+          <Select v-model.trim="model_sjtype" filterable class="task-cz-value">
+            <Option v-for="item in model_sjtypelist" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+            <Icon type="md-add" class="task-cz-name" style="font-size:26px;line-height:32px;cursor: pointer;" @click="add_taskDetails"/>
+            <Select v-model.trim="model_liucuntype" filterable class="task-cz-value" label-in-value @on-change="selectchange">
+              <Option v-for="item in model_liucuntypelist" :value="item.value" :key="item.value">{{ item.label }}</Option>
+            </Select>
+        </div>
+        <div class="task-cz" v-for="(item,index) in taskDetails">
+            <Input readonly class="tasktitle" :value="item.val" readonly/>
+            <Input class="tasknr" v-model="typemodel[index].Model"/>
+            <Icon type="md-close" class="mdclose" @click="mdclose(index)"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            任务数：
+          </span>
+          <Input placeholder="请输入任务数" v-model.trim="model_rwcount" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            实际数：
+          </span>
+          <Input disabled v-model.trim="pingjiezh" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+            <Button class="qxsc" @click="qxsc">曲线生成</Button>
+            <Button class="pjsc" @click="pjsc">平均生成</Button>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            每小时任务数：
+          </span>
+          <div class="task-cz-value">
+              <div class="hours">
+                   <span class="hours_span">00</span>
+                   <Input v-model.trim="model_hours0" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">01</span>
+                   <Input v-model.trim="model_hours1" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">02</span>
+                   <Input v-model.trim="model_hours2" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">03</span>
+                   <Input v-model.trim="model_hours3" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">04</span>
+                   <Input v-model.trim="model_hours4" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">05</span>
+                   <Input v-model.trim="model_hours5" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">06</span>
+                   <Input v-model.trim="model_hours6" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">07</span>
+                   <Input v-model.trim="model_hours7" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">08</span>
+                   <Input v-model.trim="model_hours8" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">09</span>
+                   <Input v-model.trim="model_hours9" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">10</span>
+                   <Input v-model.trim="model_hours10" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">11</span>
+                   <Input v-model.trim="model_hours11" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">12</span>
+                   <Input v-model.trim="model_hours12" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">13</span>
+                   <Input v-model.trim="model_hours13" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">14</span>
+                   <Input v-model.trim="model_hours14" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">15</span>
+                   <Input v-model.trim="model_hours15" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">16</span>
+                   <Input v-model.trim="model_hours16" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">17</span>
+                   <Input v-model.trim="model_hours17" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">18</span>
+                   <Input v-model.trim="model_hours18" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">19</span>
+                   <Input v-model.trim="model_hours19" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">20</span>
+                   <Input v-model.trim="model_hours20" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">21</span>
+                   <Input v-model.trim="model_hours21" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">22</span>
+                   <Input v-model.trim="model_hours22" class="hours_input"/>
+              </div>
+              <div class="hours">
+                   <span class="hours_span">23</span>
+                   <Input v-model.trim="model_hours23" class="hours_input"/>
+              </div>
+          </div>
+        </div>
+        <div class="task-cz">
+            <span class="task-cz-name">参数1：</span>
+            <Input v-model.trim="param1" placeholder="请输入参数1" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+            <span class="task-cz-name">参数2：</span>
+            <Input v-model.trim="param2" placeholder="请输入参数2" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+            <span class="task-cz-name">参数3：</span>
+            <Input v-model.trim="param3" placeholder="请输入参数3" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+            <span class="task-cz-name">参数4：</span>
+            <Input v-model.trim="param4" placeholder="请输入参数4" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+            <span class="task-cz-name" >参数5：</span>
+            <Input v-model.trim="param5" placeholder="请输入参数5" class="task-cz-value"/>
+        </div>
+        <div class="task-cz">
+            <div style="color:red;font-size:12px;font-weight:bold;word-wrap: break-word;word-break: normal;line-height:16px;display:none;">{{pingjiestr}}</div>
+            <div style="color:red;font-size:12px;font-weight:bold; display:none;">总和：{{pingjiezh}}</div>
+        </div>
+      </div>
+       <div slot="footer">
+        <Button type="text" size="large"  @click="cancel">取消</Button>
+        <Button type="primary" size="large"  @click="modal_ok">确定</Button>
+      </div>
+    </Modal>
+      <div class="taskinput">
+          <div class="hang">
+               <span class="qdName">公司名称：</span>
+               <Select v-model.trim="channelId" clearable filterable class="qdselect" @on-change="gschange" @on-clear="gsclear">
+                  <Option v-for="item in gsselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+
+               <span class="qdName">渠道名称：</span>
+               <Select v-model.trim="companyId" clearable filterable class="qdselect">
+                  <Option v-for="item in qdselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+          </div>
+          <div class="hang">
+             
+             <span class="qdName">开始时间：</span>
+             <DatePicker type="date" clearable placeholder="请输入开始时间"  class="start" v-model='startTime2' @on-change="start"></DatePicker>
+             <span class="qdName">结束时间：</span>
+             <DatePicker type="date" clearable placeholder="请输入结束时间" class="start" v-model='endTime2' @on-change="endt"></DatePicker>
+             
+          </div>
+          <div class="hang">
+              <span class="qdName">任务类型：</span>
+              <Select v-model.trim="taskTypeId" clearable filterable class="qdselect">
+                 <Option v-for="item in rwselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+             </Select>
+             <Button type="primary" class="subtj" @click="subtj">查询</Button>
+          </div>
+      </div>
+      <div class="table">
+          <Table stripe :columns="columns7" :data="data6"></Table>
+          <div class="pagediv">
+             <Page :total="zongcount" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+          </div>
+      </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'taskordering',
+  data () {
+    return {
+        optsarr:[10,20,30,50,80,100],
+        //模态框
+        modal_adddy:false,
+        model_taskTypeIddata:'',
+        model_taskTypeId:'',
+        modal_channelId:'',
+        model_companyId:'',
+        model_rwcount:'',
+        model_zftype:'',
+        model_sjtype:'0',
+        model_appljtype:'',
+        model_appljselect:[],
+        model_zftypelist:[],
+        model_zftypelist:[
+                 {
+                    value: '0',
+                    label: '无'
+                 },
+                 {
+                    value: '1',
+                    label: '支付宝'
+                 },
+                 {
+                    value: '2',
+                    label: '手机话费'
+                 },
+        ],
+        model_sjtypelist:[
+                 {
+                    value: '0',
+                    label: '无'
+                 },
+                 {
+                    value: '1',
+                    label: '按本书籍'
+                 },
+                 {
+                    value: '2',
+                    label: '按章书籍'
+                 },
+                 {
+                    value: '3',
+                    label: '按章和按本书籍'
+                 },
+        ],
+        model_hours0:0,
+        model_hours1:0,
+        model_hours2:0,
+        model_hours3:0,
+        model_hours4:0,
+        model_hours5:0,
+        model_hours6:0,
+        model_hours7:0,
+        model_hours8:0,
+        model_hours9:0,
+        model_hours10:0,
+        model_hours11:0,
+        model_hours12:0,
+        model_hours13:0,
+        model_hours14:0,
+        model_hours15:0,
+        model_hours16:0,
+        model_hours17:0,
+        model_hours18:0,
+        model_hours19:0,
+        model_hours20:0,
+        model_hours21:0,
+        model_hours22:0,
+        model_hours23:0,
+        param1:'',
+        param2:'',
+        param3:'',
+        param4:'',
+        param5:'',
+        model_liucuntype:'',
+        model_liucuntypelist:[
+            {
+                value:1,
+                label:'次日留存'
+            },
+            {
+                value:2,
+                label:'3日留存'
+            },
+            {
+                value:7,
+                label:'7日留存'
+            },
+            {
+                value:29,
+                label:'30日留存'
+            },
+            {
+                value:-30,
+                label:'上月留存'
+            },
+            {
+                value:-365,
+                label:'今年留存'
+            },
+        ],
+        taskDetails:[],
+        addtaskDetails:'',//下拉框选中的value和label
+        model_sfneedyh:'',
+        model_sfneedyhselect:[
+            {
+                value:1,
+                label:'需要'
+            },
+            {
+                value:0,
+                label:'不需要'
+            },
+        ],
+        time0:'',
+        time00:'',
+        time1:'',
+        time11:'',
+        time2:'',
+        executionTime:'',
+        executionTimeStr:'',
+        updateid:'',
+        typemodel:[],
+        pingjiestr:'',
+        pingjiezh:0,
+
+
+
+
+
+        zongcount:0,
+        limit:0,
+        page:1,
+        channelId:'',
+        companyId:'',
+        taskTypeId:'',
+        startTime:'',
+        endTime:'',
+        startTime2:'',
+        endTime2:'',
+        modelrw:'',
+        model8:'',
+      columns7: [
+                    {
+                        title: '任务类型',
+                        align:'center',
+                        key: 'rwlxid',
+                    },
+                    {
+                        title:'公司名称',
+                        align:'center',
+                        key: 'gsid'
+                    },
+                    {
+                        title:'渠道',
+                        align:'center',
+                        key: 'qdid'
+                    },
+                    {
+                        title:'任务执行时间',
+                        align:'center',
+                        key: 'rwzxtime'
+                    },
+                    {
+                        title:'新增总数',
+                        align:'center',
+                        key: 'rwzs'
+                    },
+                    {
+                        title:'新增已完成',
+                        align:'center',
+                        key: 'ywcrwsl'
+                    },
+                    {
+                        title:'留存总数',
+                        align:'center',
+                        key: 'retainTotalCount'
+                    },
+                    {
+                        title:'留存已完成',
+                        align:'center',
+                        key: 'retainSuccessCount'
+                    },
+                    /*
+                    {
+                        title:'支付类型',
+                        align:'center',
+                        key: 'zflx'
+                    },
+                    {
+                        title:'书籍类型',
+                        align:'center',
+                        key: 'sjlx'
+                    },
+                    
+                    {
+                        title:'是否需要用户',
+                        align:'center',
+                        key: 'sfxyyh'
+                    },
+                    */
+                    {
+                        title: '操作',
+                        key: 'key15',
+                        width: 260,
+                        align: 'center',
+                        render: (h, params) => {
+                            if(params.row.state==1){
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.showxq(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                                
+                                h('Button', {
+                                    props: {
+                                        type: 'error',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.deails(params)
+                                        }
+                                    }
+                                }, '详情'),
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.sfky(params)
+                                        }
+                                    }
+                                }, '禁用'),
+                                h('Button', {
+                                    props: {
+                                      
+                                        size: 'small'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.copy(params)
+                                        }
+                                    }
+                                }, '复制')
+                                
+                            ]);
+                            }else{
+                                return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.showxq(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                                
+                                h('Button', {
+                                    props: {
+                                        type: 'error',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.deails(params)
+                                        }
+                                    }
+                                }, '详情'),
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.sfky(params)
+                                        }
+                                    }
+                                }, '启用'),
+                                h('Button', {
+                                    props: {
+                                       
+                                        size: 'small'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.copy(params)
+                                        }
+                                    }
+                                }, '复制')
+                                
+                            ]);
+                            }
+                            
+                        }
+                    }
+                ],
+                data6: [],
+                
+           qdselect: [],
+           model_qdselect: [],
+           gsselect: [],
+           model_gsselect: [],
+           rwselect: [],
+           model_rwselect:[],
+    }
+  },
+  components: { // 定义组件
+
+  },
+  created:function(){
+      var ddnewdata = new Date(); 
+      var newdatay = ddnewdata.getFullYear(); 
+      var newdatam = +ddnewdata.getMonth()+1;//获取当前月份的日期 
+      var newdatad = ddnewdata.getDate(); 
+      this.startTime=newdatay+'-'+newdatam+'-'+newdatad;
+      this.endTime=newdatay+'-'+newdatam+'-'+newdatad;
+      this.startTime2=newdatay+'-'+newdatam+'-'+newdatad;
+      this.endTime2=newdatay+'-'+newdatam+'-'+newdatad;
+      this.limit=(this.optsarr)[0];
+      //任务类型下拉
+      this.renwu();
+      //公司下拉
+      this.gsdata();
+      //list列表
+      this.list();
+      //app逻辑列表
+      this.appljlist();
+  },
+  methods:{
+      rewulextype:function(parm){
+          var arr=this.model_taskTypeIddata;
+          for(var i=0;i<arr.length;i++){
+              if(arr[i].value==parm){
+                  this.model_zftype=arr[i].payType;
+                  if(arr[i].bookPayState==1){
+                   this.model_sjtypelist=[
+                                {
+                                    value: '1',
+                                    label: '按本书籍'
+                                },
+                                {
+                                    value: '2',
+                                    label: '按章书籍'
+                                },
+                                {
+                                    value: '3',
+                                    label: '按章和按本书籍'
+                                },
+                        ]
+                  }else{
+                    this.model_sjtypelist=[
+                              {
+                                    value: '0',
+                                    label: '无'
+                                },
+                                {
+                                    value: '1',
+                                    label: '按本书籍'
+                                },
+                                {
+                                    value: '2',
+                                    label: '按章书籍'
+                                },
+                                {
+                                    value: '3',
+                                    label: '按章和按本书籍'
+                                },
+                        ]
+                  }
+                  this.model_sjtype=arr[i].bookType;
+                  break
+              }
+          }
+      },
+      copy:function(parms){
+           
+        
+          /*
+          var obj={};
+            this.$http({
+                method:'get',
+                url:this.url+'/v1/taskDetail/getTaskDetail/'+parms.row.id,
+                data:{},
+                success:function(response){
+                    if(response.data.code==20000){
+                     obj.taskDetails=response.data.data.taskDetails;
+                     obj.appLogicalIds=response.data.data.appLogicalIds;
+                     obj.taskTypeId=parms.row.copy_taskTypeId;
+                     obj.companyId=parms.row.copy_companyId;
+                     obj.channelId=parms.row.copy_channelId;
+                     obj.needActiveCount=parms.row.copy_needActiveCount;
+                     obj.activeCountHour=parms.row.copy_activeCountHour;
+                     obj.retainPercentHour=parms.row.copy_retainPercentHour;
+                     obj.payType=parms.row.copy_payType;
+                     obj.bookType=parms.row.copy_bookType;
+                     obj.needUser=parms.row.copy_needUser;
+                     obj.param1=parms.row.copy_param1;
+                     obj.param2=parms.row.copy_param2;
+                     obj.param3=parms.row.copy_param3;
+                     obj.param4=parms.row.copy_param4;
+                     obj.param5=parms.row.copy_param5;
+                     obj.taskStartTime=parms.row.copy_taskStartTime;
+                     obj.taskEndTime=parms.row.copy_taskEndTime;
+                     _this.copysave(obj);
+                    }else{
+                        _this.$Message.warning(response.data.msg);
+                    }
+                },
+                error:function(err){
+                    console.log(err);
+                  
+                },
+            })
+            */
+         this.typemodel=[];
+          this.csh();
+            var _this=this;
+              var ddnewdata = new Date(); 
+             var newdatay = ddnewdata.getFullYear(); 
+             var newdatam = +ddnewdata.getMonth()+1;//获取当前月份的日期 
+             var newdatad = ddnewdata.getDate(); 
+             this.time0=newdatay+'-'+newdatam+'-'+newdatad;
+             this.time1=newdatay+'-'+newdatam+'-'+newdatad;
+             this.time00=newdatay+'-'+newdatam+'-'+newdatad;
+             this.time11=newdatay+'-'+newdatam+'-'+newdatad;
+          var _this=this;
+          this.updateid=parms.row.id;
+          this.$http({
+            method:'get',
+            url:this.url+'/v1/taskDetail/getTaskDetail/'+this.updateid,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   _this.tianc(response.data.data);
+                   _this.updateid='';
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+      },
+      copysave:function(obj){
+          var _this=this;
+        this.$http({
+         method:'post',
+         url:_this.url+'/v1/taskDetail/saveTaskDetail',
+         data:obj,
+         success:function(response){
+            if(response.data.code==20000){
+              _this.$Message.success('复制成功');
+             _this.subtj();
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+              _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+      },
+      sfky:function(parms){
+         var id=parms.row.id;
+         var state=parms.row.state;
+         var _this=this;
+         if(state==0){
+             this.$http({
+                method:'put',
+                url:this.url+'/v1/taskDetail/updateTaskState/'+id+'/1',
+                data:{},
+                success:function(response){
+                    if(response.data.code==20000){
+                     _this.$Message.warning('已启用');
+                     _this.subtj();
+                    }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                        _this.$Message.warning(response.data.msg);
+                    }
+                },
+                error:function(err){
+                    _this.$Message.warning(response.data.msg);
+                  
+                },
+            })
+         }else{
+             this.$http({
+                method:'put',
+                url:this.url+'/v1/taskDetail/updateTaskState/'+id+'/0',
+                data:{},
+                success:function(response){
+                    if(response.data.code==20000){
+                     _this.$Message.warning('已禁用');
+                     _this.subtj();
+                    }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                        _this.$Message.warning(response.data.msg);
+                    }
+                },
+                error:function(err){
+                    _this.$Message.warning(response.data.msg);
+                  
+                },
+            })
+         }
+      },
+      deails:function(parms){
+         this.$router.push({name:'taskorderxq',params:{id:parms.row.id}});
+      },
+      showxq:function(parms){
+         this.typemodel=[];
+          this.csh();
+          var _this=this;
+          this.updateid=parms.row.id;
+          this.$http({
+            method:'get',
+            url:this.url+'/v1/taskDetail/getTaskDetail/'+this.updateid,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   _this.tianc(response.data.data);
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                }
+            },
+            error:function(err){
+                //_this.$Message.warning(response.data.msg);
+                console.log(err);
+            },
+        })
+      },
+      tianc:function(d){
+           this.pingjiestr=d.activeCountHour;
+           this.taskDetails=[];
+           this.model_taskTypeId=d.taskTypeId;
+           this.modal_channelId=d.companyId;
+           this.executionTimeStr=d.executionTimeStr;
+           this.executionTime=((this.$time(d.executionTime)).split(' '))[0];
+           this.time2=((this.$time(d.executionTime)).split(' '))[0];
+           this.model_rwcount=d.needActiveCount;
+           this.model_zftype=d.payType+'';
+           this.model_sjtype=d.bookType+'';
+           this.model_appljtype=d.appLogicalIds;
+           this.model_sfneedyh=d.needUser;
+           this.param1=d.param1;
+           this.param2=d.param2;
+           this.param3=d.param3;
+           this.param4=d.param4;
+           this.param5=d.param5;
+           if(typeof d.taskDetails!='undefined' && d.taskDetails!=null && d.taskDetails.length>0){
+               for(var i=0;i<d.taskDetails.length;i++){
+                    var obj2={};
+                    obj2['Model']=(d.taskDetails)[i].taskNumber;
+                    (this.typemodel).push(obj2);
+                   var obj={};
+                    obj.id=(d.taskDetails)[i].retainDay;
+                    if((d.taskDetails)[i].retainDay*1==1){
+                       obj.val='次日留存';
+                    }else if((d.taskDetails)[i].retainDay*1==2){
+                       obj.val='3日留存';
+                    }else if((d.taskDetails)[i].retainDay*1==29){
+                       obj.val='30日留存';
+                    }else if((d.taskDetails)[i].retainDay*1==-30){
+                       obj.val='上月留存';
+                    }else if((d.taskDetails)[i].retainDay*1==-365){
+                       obj.val='今年留存';
+                    }else if((d.taskDetails)[i].retainDay*1==7){
+                       obj.val='7日留存';
+                    }
+                    obj.num=(d.taskDetails)[i].taskNumber;
+                    (this.taskDetails).push(obj);
+                   
+               }
+           }
+           var activeCountHourarr=(d.activeCountHour).split("&");
+           var bjzh=0;
+           for(var j=0;j<activeCountHourarr.length;j++){
+               var valarr=activeCountHourarr[j].split("=");
+               this['model_hours'+valarr[0]*1]=valarr[1]*1;
+               bjzh+=valarr[1]*1;
+           }
+           this.pingjiezh=bjzh;
+               var _this=this;
+                this.$http({
+                method:'get',
+                url:_this.url+'/v1/channel/findChannelSel?companyId='+_this.modal_channelId,
+                data:{},
+                success:function(response){
+                    _this.model_companyId='';
+                    if(response.data.code==20000){
+                   var data=response.data.data;
+                   _this.model_qdselect=[];
+                    for(var i=0;i<data.length;i++){
+                        var obj={};
+                        obj.value=data[i].id;
+                        obj.label=data[i].name;
+                        (_this.model_qdselect).push(obj);
+                    }
+                    _this.model_companyId=d.channelId;
+                    }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                         _this.$Message.warning(response.data.msg);
+                    }
+                },
+                error:function(err){
+                    console.log(err);
+                },
+            })
+
+           this.modal_adddy=true;
+      },
+      qxsc:function(){
+           if(isNaN(this.model_rwcount)){
+               this.$Message.warning('请输入数字');
+              return false
+          }
+      var _this=this;
+      this.$http({
+         method:'get',
+         url:this.url+'/v1/taskDetail/getCountListPercent/'+this.model_rwcount,
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+               for(var i=0;i<response.data.data.length;i++){
+                   _this['model_hours'+i]=(response.data.data)[i];
+               }
+               _this.pingjie();
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+       })
+       
+      },
+      pjsc:function(){
+          if(isNaN(this.model_rwcount)){
+               this.$Message.warning('请输入数字');
+              return false
+          }
+          var n=Math.round((this.model_rwcount)/24);
+          for(var i=0;i<24;i++){
+              this['model_hours'+i]=n;
+          }
+          this.pingjie();
+      },
+      pingjie:function(){
+          var str='';
+          var rwcount=0;
+          for(var i=0;i<24;i++){
+             rwcount+=this['model_hours'+i]*1;
+           if(i==23){
+                str+=this.tozero(i)+'='+this['model_hours'+i]*1;
+           }else{
+                str+=this.tozero(i)+'='+this['model_hours'+i]*1+'&';
+           }
+         }
+         this.pingjiestr=str;
+         this.pingjiezh=rwcount;
+      },
+      add_taskDetails:function(){
+          if(this.model_liucuntype!=''){
+             var flag=true;
+             for(var i=0;i<this.taskDetails.length;i++){
+                   if((this.taskDetails)[i].id==this.addtaskDetails.value){
+                       flag=false;
+                   }
+             }
+             if(flag){
+                var obj2={};
+                obj2['Model']=0;
+                (this.typemodel).push(obj2);
+
+                var obj={};
+                obj.id=this.addtaskDetails.value;
+                obj.val=this.addtaskDetails.label;
+                //obj.num=0;
+                (this.taskDetails).push(obj);
+              //  this.modeldy();//动态model对应
+
+             }else{
+                 this.$Message.warning('不能重复');
+             }
+          }
+      },
+      modeldy:function(){
+       /*   for(var j=0;j<this.taskDetails.length;j++){
+              (this.taskDetails)[j].num=(this.typemodel)[j]['Model']
+          }
+         */
+      },
+      mdclose:function(index){
+          (this.taskDetails).splice(index,1);
+          (this.typemodel).splice(index,1);
+      },
+      selectchange:function(parms){
+        var obj={};
+        obj.value=parms.value;
+        obj.label=parms.label;
+        this.addtaskDetails=obj;
+      },
+      appljlist:function(){
+        var _this=this;
+        this.$http({
+         method:'get',
+         url:_this.url+'/v1/appLogical/findAppLogicalSel',
+         data:{},
+         success:function(response){
+             _this.model_appljselect=[];
+            if(response.data.code==20000){
+              for(var i=0;i<response.data.data.length;i++){
+                  var obj={};
+                  obj.value=(response.data.data)[i].id;
+                  obj.label=(response.data.data)[i].name;
+                  (_this.model_appljselect).push(obj);
+              }
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                 _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+       })
+      },
+      adddy:function(){
+          this.pingjiestr='';
+          this.pingjiezh=0;
+          this.csh();
+          this.updateid='';
+          this.modal_adddy=true;
+      },
+      csh:function(){
+          this.model_taskTypeId='';
+          this.modal_channelId='';
+          this.model_companyId='';
+          this.model_appljtype='';
+          this.model_sfneedyh='';
+          this.model_zftype='';
+          this.model_sjtype=0+'';
+          this.model_liucuntype='';
+          this.taskDetails=[];
+          this.model_qdselect=[];
+          this.model_rwcount='';
+          this.time0='';
+          this.time1='';
+          for(var i=0;i<24;i++){
+              this['model_hours'+i]=0;
+          }
+      },
+      start:function(v){
+        this.startTime=v;
+        this.startTime2=v;
+      },
+      model_start:function(v){
+          this.time0=v;
+          this.time00=v;
+      },
+      model_end:function(v){
+          this.time1=v;
+          this.time11=v;
+      },
+      endt:function(v){
+          this.endTime=v;
+          this.endTime2=v;
+      },
+      subtj:function(){
+        if(this.channelId==undefined || this.channelId=='undefined'){
+                this.channelId='';
+        }
+        if(this.companyId==undefined || this.companyId=='undefined'){
+                this.companyId='';
+        }
+        if(this.taskTypeId==undefined || this.taskTypeId=='undefined'){
+                this.taskTypeId='';
+        }
+        this.page=1;
+        this.list();
+      },
+    changepage:function(v){
+        this.page=v;
+        this.list();
+    },
+     pagesizechange:function(v){
+        this.limit=v;
+        this.page=1;
+        this.list();
+      },
+    tozero:function (t){
+       return (t<10)?'0'+t:t;
+    },
+    cancel:function(){
+        this.modal_adddy=false;
+    },
+    modal_ok:function(){
+         var _this=this;
+         var str='';
+         var rwcount=0;
+         for(var i=0;i<24;i++){
+             rwcount+=this['model_hours'+i]*1;
+           if(i==23){
+                str+=this.tozero(i)+'='+this['model_hours'+i]*1;
+           }else{
+                str+=this.tozero(i)+'='+this['model_hours'+i]*1+'&';
+           }
+         }
+         var taskDetailsarr=[];
+         for(var j=0;j<this.taskDetails.length;j++){
+             var obj={};
+             obj.retainDay=(this.taskDetails)[j].id;
+             obj.taskNumber=(this.typemodel)[j]['Model'];
+             taskDetailsarr.push(obj);
+         }
+         console.log(555555);
+         if(this.model_appljtype+''==''){
+                this.model_appljtype=[];
+         }
+         if(this.pingjiezh*1<=0){
+             this.$Message.warning('任务数必须大于0!');
+             return false
+         }
+        // console.log(this.taskDetails);
+        // console.log(taskDetailsarr);
+         if(this.updateid==''){
+             /*
+              if(this.model_taskTypeId+''=='' || this.model_companyId+''=='' || this.modal_channelId+''=='' || this.model_sjtype+''=='' || this.time0+''=='' || this.time1+''==''){
+                    this.$Message.warning('请填写完整!');
+                    return false
+                }
+                */
+                if(this.model_taskTypeId+''==''){
+                    this.$Message.warning('请填写任务类型!');
+                    return false
+                }else if(this.modal_channelId+''==''){
+                    this.$Message.warning('请填写公司!');
+                    return false
+                }else if(this.model_companyId+''==''){
+                    this.$Message.warning('请填写渠道名称!');
+                    return false
+                }else if(this.model_sjtype+''==''){
+                    this.$Message.warning('请填写书籍类型!');
+                    return false
+                }else if(this.time0+''==''){
+                    this.$Message.warning('请填写开始时间!');
+                    return false
+                }else if(this.time0+''==''){
+                    this.$Message.warning('请填写结束时间!');
+                    return false
+                }
+          var data={
+            'taskTypeId':this.model_taskTypeId,
+            'companyId':this.modal_channelId,
+            'channelId':this.model_companyId,
+            'needActiveCount':rwcount,
+            'activeCountHour':str,
+            'retainPercentHour':'00=10&01=5&02=1&03=1&04=1&05=1&06=1&07=1&08=5&09=4&10=3&11=5.5&12=6&13=3&14=2&15=3&16=2&17=3&18=3&19=7&20=8&21=9&22=10&23=5.5',
+            'payType':this.model_zftype,
+            'bookType':this.model_sjtype,
+            'needUser':this.model_sfneedyh,
+            'param1':this.param1,
+            'param2':this.param2,
+            'param3':this.param3,
+            'param4':this.param4,
+            'param5':this.param5,
+            'taskStartTime':this.time00,
+            'taskEndTime':this.time11,
+            'taskDetails':taskDetailsarr,
+            'appLogicalIds':this.model_appljtype,
+         }
+         
+         
+         this.$http({
+         method:'post',
+         url:_this.url+'/v1/taskDetail/saveTaskDetail',
+         data:data,
+         success:function(response){
+            if(response.data.code==20000){
+              _this.$Message.success('添加成功');
+             _this.subtj();
+             _this.modal_adddy=false;
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+              _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+     }else{
+         /*
+         if(this.model_taskTypeId+''=='' || this.model_companyId+''=='' || this.modal_channelId+''=='' || this.model_sjtype+''=='' || this.time2+''==''){
+                    this.$Message.warning('请填写完整!');
+                    return false
+                }
+                */
+               if(this.model_taskTypeId+''==''){
+                    this.$Message.warning('请填写任务类型!');
+                    return false
+                }else if(this.modal_channelId+''==''){
+                    this.$Message.warning('请填写公司!');
+                    return false
+                }else if(this.model_companyId+''==''){
+                    this.$Message.warning('请填写渠道名称!');
+                    return false
+                }else if(this.model_sjtype+''==''){
+                    this.$Message.warning('请填写书籍类型!');
+                    return false
+                }else if(this.time2+''==''){
+                    this.$Message.warning('请填写执行时间!');
+                    return false
+                }
+         var data={
+            'taskTypeId':this.model_taskTypeId,
+            'companyId':this.modal_channelId,
+            'channelId':this.model_companyId,
+            'needActiveCount':rwcount,
+            'activeCountHour':str,
+            'retainPercentHour':'00=10&01=5&02=1&03=1&04=1&05=1&06=1&07=1&08=5&09=4&10=3&11=5.5&12=6&13=3&14=2&15=3&16=2&17=3&18=3&19=7&20=8&21=9&22=10&23=5.5',
+            'payType':this.model_zftype,
+            'bookType':this.model_sjtype,
+            'needUser':this.model_sfneedyh,
+            'param1':this.param1,
+            'param2':this.param2,
+            'param3':this.param3,
+            'param4':this.param4,
+            'param5':this.param5,
+            'executionTime':this.executionTime,
+            'executionTimeStr':this.executionTimeStr,
+            'taskDetails':taskDetailsarr,
+            'appLogicalIds':this.model_appljtype,
+         }
+           this.$http({
+                method:'put',
+                url:_this.url+'/v1/taskDetail/updateTaskDetail/'+this.updateid,
+                data:data,
+                success:function(response){
+                    if(response.data.code==20000){
+                    _this.$Message.success('修改成功');
+                    _this.page=1;
+                    _this.list();
+                    _this.modal_adddy=false;
+                    }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                        _this.$Message.warning(response.data.msg);
+                    }
+                },
+                error:function(err){
+                    console.log(err);
+                },
+            })
+     }
+    },
+    gsclear:function(){
+        this.channelId='';
+        this.qdselect=[];
+    },
+    qdlist:function(){
+        if(this.channelId+''=='' || this.channelId==undefined || this.channelId=='undefined'){
+             return false
+         }
+         var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/channel/findChannelSel?companyId='+this.channelId,
+         data:{},
+         success:function(response){
+             _this.companyId='';
+            if(response.data.code==20000){
+              _this.qddom(response.data.data);
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.qdselect=[];
+                _this.model_qdselect=[];
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+     model_qdlist:function(){
+         if(this.modal_channelId+''=='' || this.modal_channelId=='undefined' || this.modal_channelId==undefined){
+             return false
+         }
+         var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/channel/findChannelSel?companyId='+this.modal_channelId,
+         data:{},
+         success:function(response){
+            // _this.qdselect=[];
+             _this.model_companyId='';
+            if(response.data.code==20000){
+              _this.model_qddom(response.data.data);
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.model_qdselect=[];
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+    model_qddom:function(data){
+         this.model_qdselect=[];
+        for(var i=0;i<data.length;i++){
+            var obj={};
+            obj.value=data[i].id;
+            obj.label=data[i].name;
+            (this.model_qdselect).push(obj);
+        }
+    },
+    qddom:function(data){
+      for(var i=0;i<data.length;i++){
+          var obj={};
+          obj.value=data[i].id;
+          obj.label=data[i].name;
+           (this.qdselect).push(obj);
+      }
+    },
+    gschange:function(){
+        this.qdlist();
+    },
+    model_gschange:function(){
+        this.model_qdlist();
+    },
+    gsdata:function(){
+        var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/company/findCompanySel',
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+              _this.gsdom(response.data.data);
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+    gsdom:function(data){
+      this.gsselect=[];
+      //this.model_gsselect=[];
+      for(var i=0;i<data.length;i++){
+          var obj={};
+          obj.value=data[i].id;
+          obj.label=data[i].name;
+           (this.gsselect).push(obj);
+           (this.model_gsselect).push(obj);
+      }
+    },
+    list:function(){
+        var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/taskDetail/findTaskPageList?page='+this.page+'&limit='+this.limit+'&companyId='+this.channelId+'&taskTypeId='+this.taskTypeId+'&startTime='+this.startTime+'&endTime='+this.endTime+'&channelId='+this.companyId,
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+               _this.zongcount=response.data.count;
+               _this.listdom(response.data.data);
+            }else if(response.data.code==20003){
+                 _this.data6=[];
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+     timestampToTime:function(timestamp){
+       var date = new Date(timestamp);
+        var Y = date.getFullYear() + '-';
+        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        var D = date.getDate() + ' ';
+        var h = date.getHours() + ':';
+        var m = date.getMinutes() + ':';
+        var s = date.getSeconds();
+        return Y+M+D+h+m+s;
+    },
+    listdom:function(d){
+        this.data6=[];
+        for(var i=0;i<d.length;i++){
+            var obj={};
+            if(typeof d[i].taskTypeId!='undefined'){
+                obj.rwlxid=d[i].taskTypeName;
+            }else{
+                obj.rwlxid='';
+            }
+
+            if(typeof d[i].taskTypeId!='undefined'){
+                obj.taskTypeId=d[i].taskTypeId;
+            }else{
+                obj.taskTypeId='';
+            }
+           
+            if(typeof d[i].companyId!='undefined'){
+                obj.gsid=d[i].companyName;
+            }else{
+                obj.gsid='';
+            }
+            if(typeof d[i].channelId!='undefined'){
+                obj.qdid=d[i].channelName;
+            }else{
+                obj.qdid='';
+            }
+            if(typeof d[i].executionTime!='undefined'){
+                obj.rwzxtime=(this.timestampToTime(d[i].executionTime).split(' '))[0];
+            }else{
+                obj.rwzxtime='';
+            }
+            if(typeof d[i].needActiveCount!='undefined'){
+                obj.rwzs=d[i].needActiveCount;
+            }else{
+                obj.rwzs='';
+            }
+            if(typeof d[i].doActiveCount!='undefined'){
+                obj.ywcrwsl=d[i].doActiveCount;
+            }else{
+                obj.ywcrwsl='';
+            }
+            if(typeof d[i].state!='undefined'){
+                obj.state=d[i].state;
+            }else{
+                obj.state='';
+            }
+            if(typeof d[i].retainTotalCount!='undefined'){
+                obj.retainTotalCount=d[i].retainTotalCount;
+            }else{
+                obj.retainTotalCount='11';
+            }
+            if(typeof d[i].retainSuccessCount!='undefined'){
+                obj.retainSuccessCount=d[i].retainSuccessCount;
+            }else{
+                obj.retainSuccessCount='22';
+            }
+            /*
+            if(typeof d[i].payType!='undefined'){
+               if(d[i].payType*1==0){
+                  obj.zflx='无';
+               }else if(d[i].payType*1==1){
+                  obj.zflx='支付宝';
+               }else if(d[i].payType*1==2){
+                  obj.zflx='手机话费';
+               }
+                
+            }else{
+                obj.zflx='';
+            }
+            if(typeof d[i].bookType!='undefined'){
+               if(d[i].bookType*1==0){
+                    obj.sjlx='无';
+                }else if(d[i].bookType*1==1){
+                    obj.sjlx='按本书籍';
+                }else if(d[i].bookType*1==2){
+                    obj.sjlx='全站包支付';
+                }else if(d[i].bookType*1==3){
+                    obj.sjlx='按章书籍';
+                }else if(d[i].bookType*1==4){
+                    obj.sjlx='按章和按本书籍';
+                }
+            }else{
+                obj.sjlx='';
+            }
+            */
+            if(typeof d[i].needUser!='undefined'){
+                if(d[i].bookType==1){
+                    obj.sfxyyh='是';
+                }else{
+                    obj.sfxyyh='否';
+                }
+            }else{
+                obj.sfxyyh='';
+            }
+
+            //复制用的数据
+            if(typeof d[i].taskTypeId!='undefined'){
+                obj.copy_taskTypeId=d[i].taskTypeId;
+            }else{
+                obj.copy_taskTypeId='';
+            }
+            if(typeof d[i].companyId!='undefined'){
+                obj.copy_companyId=d[i].companyId;
+            }else{
+                obj.copy_companyId='';
+            }
+            if(typeof d[i].channelId!='undefined'){
+                obj.copy_channelId=d[i].channelId;
+            }else{
+                obj.copy_channelId='';
+            }
+            if(typeof d[i].needActiveCount!='undefined'){
+                obj.copy_needActiveCount=d[i].needActiveCount;
+            }else{
+                obj.copy_needActiveCount='';
+            }
+            if(typeof d[i].activeCountHour!='undefined'){
+                obj.copy_activeCountHour=d[i].activeCountHour;
+            }else{
+                obj.copy_activeCountHour='';
+            }
+            if(typeof d[i].retainPercentHour!='undefined'){
+                obj.copy_retainPercentHour=d[i].retainPercentHour;
+            }else{
+                obj.copy_retainPercentHour='';
+            }
+            if(typeof d[i].payType!='undefined'){
+                obj.copy_payType=d[i].payType;
+            }else{
+                obj.copy_payType='';
+            }
+            if(typeof d[i].bookType!='undefined'){
+                obj.copy_bookType=d[i].bookType;
+            }else{
+                obj.copy_bookType='';
+            }
+            if(typeof d[i].needUser!='undefined'){
+                obj.copy_needUser=d[i].needUser;
+            }else{
+                obj.copy_needUser='';
+            }
+            if(typeof d[i].param1!='undefined'){
+                obj.copy_param1=d[i].param1;
+            }else{
+                obj.copy_param1='';
+            }
+            if(typeof d[i].param2!='undefined'){
+                obj.copy_param2=d[i].param2;
+            }else{
+                obj.copy_param2='';
+            }
+            if(typeof d[i].param3!='undefined'){
+                obj.copy_param3=d[i].param3;
+            }else{
+                obj.copy_param3='';
+            }
+            if(typeof d[i].param4!='undefined'){
+                obj.copy_param4=d[i].param4;
+            }else{
+                obj.copy_param4='';
+            }
+            if(typeof d[i].param5!='undefined'){
+                obj.copy_param5=d[i].param5;
+            }else{
+                obj.copy_param5='';
+            }
+            if(typeof d[i].param5!='undefined'){
+                obj.copy_param5=d[i].param5;
+            }else{
+                obj.copy_param5='';
+            }
+             var ddnewdata = new Date(); 
+             var newdatay = ddnewdata.getFullYear(); 
+             var newdatam = +ddnewdata.getMonth()+1;//获取当前月份的日期 
+             var newdatad = ddnewdata.getDate(); 
+             obj.copy_taskStartTime=newdatay+'-'+newdatam+'-'+newdatad;
+             obj.copy_taskEndTime=newdatay+'-'+newdatam+'-'+newdatad;
+           
+            obj.id=d[i].id;
+            (this.data6).push(obj);
+        }
+    },
+    renwu:function(){
+        var _this=this;
+        this.$http({
+         method:'get',
+         url:_this.url+'/v1/taskType/findTaskTypeForTaskSel',
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+                _this.rwselect=[];
+                _this.model_rwselect=[];
+                if(response.data.data.length>0){
+                    var rwlist=response.data.data;
+                    var arrdata=[];
+                    for(var i=0;i<rwlist.length;i++){
+                        var obj={};
+                        var obj2={};
+                        obj.value=rwlist[i].id;
+                        obj.label=rwlist[i].name;
+                        obj2.value=rwlist[i].id;
+                        obj2.label=rwlist[i].name;
+                        obj2.payType=rwlist[i].payType;
+                        obj2.bookType=rwlist[i].bookType;
+                        obj2.bookPayState=rwlist[i].bookPayState;
+                        (_this.rwselect).push(obj);
+                        (_this.model_rwselect).push(obj);
+                        arrdata.push(obj2);
+                    }
+                    _this.model_taskTypeIddata=arrdata;
+                }
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                _this.$Message.warning(response.data.msg);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+    show:function(parms){
+        console.log(parms);
+    },
+   
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.taskinput{
+  margin:30px 0 0 30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.subtj{
+  display:block;
+  float:left;
+}
+.table{
+  margin-top:30px;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+.taskordering{
+    padding: 10px;
+}
+.table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      overflow:hidden;
+      line-height:32px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: block;
+        float:left;
+        margin-right:15px;
+      }
+      .task-cz-value{
+          float:left;
+          display:block;
+          text-align:left;
+          width:440px;
+      }
+    }
+  }
+  .hours{
+      float:left;
+      overflow:hidden;
+      line-height:32px;
+      margin:4px 0;
+      .hours_span{
+          display:block;
+          float:left;
+          width:20px;
+      }
+      .hours_input{
+          display:block;
+          float:left;
+          width:40px;
+          margin:0 5px;
+      }
+  }
+  .tasktitle{
+      float:left;
+      width:100px;
+  }
+  .tasknr{
+      float:left;
+      width:400px;
+      margin:0 10px;
+  }
+  .mdclose{
+      float:left;
+      width:30px;
+      text-align:center;
+      font-size:26px;
+      line-height:32px;
+      cursor:pointer;
+  }
+  .qxsc{
+      margin-left:120px;
+  }
+  .qxsc,.pjsc{
+      float:left;
+      margin-right:30px;
+  }
+  .tabs-top {
+      width: 100%;
+      height: 50px;
+      border-bottom:solid 1px #cccccc;
+      line-height:40px;
+      padding-bottom:10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+</style>

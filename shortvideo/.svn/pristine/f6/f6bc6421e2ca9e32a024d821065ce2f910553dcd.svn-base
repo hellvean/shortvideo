@@ -1,0 +1,41 @@
+<template>
+    <Submenu :name="data.index" v-if="data.children.length>0">
+        <template slot="title">
+            <Icon type="ios-paper" />
+            {{data.name}}
+        </template>
+
+        <MenuItem v-for="(item,index) in data.children" :name="item.index"><router-link :to='item.url' style="color:#ffffff;display:block;">{{item.name}}</router-link></MenuItem>
+        
+      
+    </Submenu>
+</template>
+  
+<script>
+export default {
+  props: ['data'],
+  name: 'cpamenu',
+  data () {
+    return {
+      list:'',
+    }
+  },
+  watch:{
+  
+  },
+  created:function(){
+
+        
+  },
+  components: { // 定义组件
+ 
+  },
+  methods:{
+   
+   
+ },
+  computed:{
+
+	},
+}
+</script>

@@ -1,0 +1,102 @@
+<template>
+  <div class="table">
+<Table stripe :columns="columns1" :data="data1"></Table>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'role',
+  data () {
+    return {
+      columns1:[],
+      showzd:[],
+      data1:[],
+    }
+  },
+  created:function(){
+  this.init();
+  },
+  methods:{
+   init:function(){
+     var _this=this;
+       this.$http({
+         method:'get',
+         url:_this.url+'/v1/head/getHead?dimension=taskDetail',
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                      _this.header(response.data.data);
+                }else{
+                       _this.$Message.warning(response.data.message);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+   header:function(d){
+      if(d.columns.length>0){
+        for(var i=0;i<d.columns.length;i++){
+          if((d.columns)[i].isShow==1){
+            (this.showzd).push((d.columns)[i].dbField);
+            var obj={};
+            if((d.columns)[i].type=='percent'){
+              obj.title=(d.columns)[i].showName+'(%)';
+            }else{
+              obj.title=(d.columns)[i].showName;
+            }
+            
+            obj.align='center';
+            obj.key=(d.columns)[i].dbField;
+            (this.columns1).push(obj);
+          }
+        }
+        if(this.columns1.length>0){
+            this.body();
+        }
+        
+      }
+   },
+   body:function(){
+     var _this=this;
+      this.$http({
+         method:'get',
+         url:_this.url+'/v1/head/getInfo',
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                  var d=response.data.data;
+                     for(var i=0;i<d.length;i++){
+                       var obj={};
+                          for(var k in d[i]){
+                             for(var b=0;b<_this.showzd.length;b++){
+                                if((_this.showzd)[b]==k){
+                                  obj[k]=d[i][k];
+                                  break
+                                }
+                             }
+                          }
+                        (_this.data1).push(obj); 
+                     }
+                }else{
+                       _this.$Message.warning(response.data.message);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.table{
+  padding:10px;
+}
+</style>

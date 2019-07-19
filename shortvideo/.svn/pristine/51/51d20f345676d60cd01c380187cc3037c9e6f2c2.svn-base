@@ -1,0 +1,533 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        任务日志列表
+      </div>
+      <div class="tabs-top-addTask">
+        <!--<Button type="info" @click="modal">添加用户</Button>-->
+      </div>
+    </div>
+    <div>
+      <RadioGroup v-model="buttonSize" type="button">
+        <Radio label="large">主表</Radio>
+        <Radio label="default">副表</Radio>
+      </RadioGroup>
+    </div>
+    <div class="groupinput">
+      <div class="hang">
+        <div class="flesx">
+          <span class="qdName">用户名：</span>
+          <Input v-model="userName" placeholder="请输入用户名" class="qdselect"/>
+        </div>
+        <div class="flesx">
+          <span class="qdName">设备号：</span>
+          <Input v-model="deviceId" placeholder="请输入设备号" class="qdselect"/>
+        </div>
+        <div class="flesx">
+          <span class="qdName">日志标题：</span>
+          <Input v-model="typeName" placeholder="请输入日志标题" class="qdselect"/>
+        </div>
+      </div>
+
+      <div class="hang">
+        <div class="flesx">
+          <span class="qdName">日志类型：</span>
+          <Input v-model="type" placeholder="请输入日志类型" class="qdselect"/>
+        </div>
+        <div class="flesx">
+          <span class="qdName">内容：</span>
+          <Input v-model="msg" placeholder="请输入内容" style="" class="qdselect"/>
+        </div>
+        <div class="flesx">
+          <span class="qdName">任务id：</span>
+          <Input v-model="taskId" placeholder="请输入任务id" class="qdselect"/>
+        </div>
+      </div>
+      <div class="hang">
+        <div class="flesx">
+          <span class="qdName">开始时间：</span>
+          <DatePicker type="datetime" v-model="startTime" @on-change="handleChange1" format="yyyy-MM-dd"
+                      placeholder="请选择开始时间"
+                      class="qdselect"></DatePicker>
+        </div>
+        <div class="flesx">
+          <span class="qdName">结束时间：</span>
+          <DatePicker type="datetime" v-model="endTime" @on-change="handleChange2" format="yyyy-MM-dd"
+                      placeholder="请选择结束时间"
+                      class="qdselect"></DatePicker>
+        </div>
+        <div class="flesx">
+          <span class="qdName">任务类型：</span>
+          <Select v-model="taskType" filterable clearable placeholder="请选择任务类型" class="qdselect">
+            <Option v-for="item in taskTypeSelect" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+      </div>
+      <div class="hang">
+        <div class="flesx">
+          <span class="qdName">公司：</span>
+          <Select v-model="companyId" filterable clearable @on-change="companySelect" class="qdselect">
+            <Option v-for="item in companyList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+        <div class="flesx">
+          <span class="qdName">渠道：</span>
+          <Select v-model="channelId" clearable filterable class="qdselect" placeholder="请先选择公司">
+            <Option v-for="item in channelList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+        <div class="flesx">
+          <span class="qdName">留存天数：</span>
+          <Select v-model="retainDay" clearable filterable class="qdselect" placeholder="请选择留存天数">
+            <Option v-for="item in retaindayList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+        <!--<div class="flesx">-->
+        <!--<span class="qdName">渠道：</span>-->
+        <!--<Input v-model="channelId" placeholder="请输入日志类型" class="qdselect"/>-->
+        <!--</div>-->
+        <!--<div class="flesx">-->
+          <!--<Button type="primary" class="subtj" @click="logList">查询</Button>-->
+          <!--<Button type="primary" class="subtj" @click="clearSelect">清空选择</Button>-->
+        <!--</div>-->
+      </div>
+      <div class="hang">
+        <div class="flesx"></div>
+        <div class="flesx"></div>
+        <div class="flesx" style="float: right">
+          <Button type="primary" class="subtj" @click="logList">查询</Button>
+          <Button type="primary" class="subtj" @click="clearSelect">清空选择</Button>
+        </div>
+      </div>
+    </div>
+    <div class="table">
+      <Table stripe :columns="columns" :data="loglist"></Table>
+      <div class="pagediv">
+        <Page :total="tots" :page-size="limit" show-elevator show-sizer :current="pages" :page-size-opts="sizes"
+              show-total
+              @on-change="pageChange" @on-page-size-change="pageSize"/>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: 'tasklog',
+    data() {
+      return {
+        buttonSize: 'large',
+        sizes: [10, 20, 30, 50, 80, 100],
+        columns: [
+          {
+            title: '任务id',
+            width: 90,
+            key: 'taskId',
+            align: 'center',
+          },
+          {
+            title: '设备号',
+            width: 90,
+            key: 'deviceId',
+            align: 'center',
+          },
+          {
+            title: '日志类型',
+            key: 'type',
+            width: 90,
+            align: 'center',
+          },
+          {
+            title: '日志标题',
+            key: 'typeName',
+            align: 'center',
+          },
+          {
+            title: '内容',
+            key: 'msg',
+            align: 'center',
+          },
+          {
+            title: '用户名',
+            key: 'username',
+            align: 'center',
+          },
+          {
+            title: '密码',
+            key: 'password',
+            align: 'center',
+          },
+          {
+            title: '公司',
+            key: 'company',
+            align: 'center',
+          },
+          {
+            title: '渠道',
+            key: 'channel',
+            align: 'center',
+          },
+          {
+            title: '任务类型',
+            key: 'taskTypeName',
+            align: 'center',
+          },
+          {
+            title: '留存天数',
+            key: 'retainDay',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.filter(row.retainDay)),
+              ]);
+            }
+          },
+          {
+            title: '添加时间',
+            key: 'addtime',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.timeStamp(row.addtime / 1000)),
+              ]);
+            }
+          },
+        ],
+        retainDay:'',
+        retaindayList:[
+          {
+            value:0,
+            label:'新增'
+          },
+          {
+            value:1,
+            label:'次日留存'
+          },
+          {
+            value:2,
+            label:'3日留存'
+          },
+          {
+            value:6,
+            label:'7日留存'
+          },
+          {
+            value:29,
+            label:'30日留存'
+          },
+          {
+            value:-30,
+            label:'上月留存'
+          },
+          {
+            value:-365,
+            label:'今年留存'
+          },
+        ],
+        logType: 1,
+        userName: '',
+        deviceId: '',
+        typeName: '',
+        type: '',
+        channelList: '',
+        companyList: '',
+        companyId: '',
+        channelId: '',
+        msg: '',
+        taskId: '',
+        taskType: '',
+        taskTypeSelect: '',
+        startTime: '',
+        endTime: '',
+        tots: 0,
+        page: 1,
+        loglist: [],
+        limit: 10,
+        pages: 1,
+        tures: false,
+      }
+    },
+    components: { // 定义组件
+
+    },
+    mounted() {
+      this.startTime = new Date(new Date(new Date().toLocaleDateString()).getTime());
+      this.endTime = new Date(new Date(new Date().toLocaleDateString()).getTime() + 24 * 60 * 60 * 1000);
+      this.logList()
+      this.taskTypes()
+      this.compList()
+    },
+    created() {
+
+    },
+    watch: {
+      buttonSize(a, b) {
+        if (a == 'large') {
+          this.logType = 1
+          this.logList();
+        } else {
+          this.logType = 2
+          this.logList();
+        }
+      }
+    },
+    methods: {
+      filter: function (i) {
+        // console.log(i);
+        switch (i) {
+          case 0:
+            return '新增';
+            break;
+          case 1:
+            return '次日留存';
+            break;
+          case 2:
+            return '3日留存';
+            break;
+          case 6:
+            return '7日留存';
+            break;
+          case 29:
+            return '30日留存';
+            break;
+          case -30:
+            return '上月留存';
+            break;
+          case -365:
+            return '今年留存';
+            break;
+          default:
+            return '错误';
+        }
+        // {
+        //   value:1,
+        //     label:'次日留存'
+        // },
+        // {
+        //   value:2,
+        //     label:'3日留存'
+        // },
+        // {
+        //   value:6,
+        //     label:'7日留存'
+        // },
+        // {
+        //   value:29,
+        //     label:'30日留存'
+        // },
+        // {
+        //   value:-30,
+        //     label:'上月留存'
+        // },
+        // {
+        //   value:-365,
+        //     label:'今年留存'
+        // },
+      },
+      companySelect: function (e) {
+        // console.log(e)
+        this.channel(e)
+      },
+      compList: function () {
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/company/findCompanySel',
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.companyList = res.data.data;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      channel: function (e) {
+        e = ((e == 'undefined' || e == undefined) ? '' : e);
+        // this.channelList = '';
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/channel/findChannelSel?companyId=' + e,
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.channelList = res.data.data;
+              // console.log(this.association.channelId)
+            } else if (res.data.code == 20003) {
+              this.channelList = '';
+              this.$Message.warning('该公司对应的渠道没有数据');
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.channelList = '';
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      pageSize: function (e) {
+        this.limit = e;
+        this.page = 1;
+        this.logList()
+      },
+      handleChange1: function (e) {
+        // this.startTime = e;
+      },
+      handleChange2: function (e) {
+        // this.endTime = e;
+      },
+      clearSelect: function () {
+        this.userName = ''
+        this.deviceId = ''
+        this.typeName = ''
+        this.msg = ''
+        this.taskId = ''
+        this.taskType = ''
+        this.startTime = ''
+        this.endTime = ''
+      },
+      logList: function () {
+        console.log(this.retainDay)
+        this.taskType = ((this.taskType == 'undefined' || this.taskType == undefined) ? '' : this.taskType);
+        this.companyId = ((this.companyId == 'undefined' || this.companyId == undefined) ? '' : this.companyId);
+        this.channelId = ((this.channelId == 'undefined' || this.channelId == undefined) ? '' : this.channelId);
+        this.retainDay = ((this.retainDay == 'undefined' || this.retainDay == undefined) ? '' : this.retainDay);
+        let t1 = this.startTime.getFullYear() + '-' + (this.startTime.getMonth() + 1) + '-' + this.startTime.getDate()
+        let t2 = this.endTime.getFullYear() + '-' + (this.endTime.getMonth() + 1) + '-' + this.endTime.getDate()
+        if (this.tures) {
+          this.pages = this.page
+        } else {
+          this.pages = 1;
+        }
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/runLog/findLogList?page=' + this.page + '&limit=' + this.limit + '&logType=' + this.logType + '&userName=' + this.userName + '&deviceId=' + this.deviceId + '&typeName=' + this.typeName + '&msg=' + this.msg + '&taskId=' + this.taskId + '&taskType=' + this.taskType + '&startTime=' + t1 + '&endTime=' + t2 + '&type=' + this.type + '&companyId=' + this.companyId + '&channelId=' + this.channelId+'&retainDay='+this.retainDay,
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.tots = res.data.count;
+              this.loglist = res.data.data;
+              this.page = 1;
+              this.tures = false;
+              // console.log(this.taskTypeSelect)
+            } else if (res.data.code == 20003) {
+              this.tots = 0;
+              this.loglist = [];
+              this.tures = false;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          }
+        })
+      },
+      taskTypes: function () {
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/taskType/findTaskTypeSel',
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.taskTypeSelect = res.data.data;
+              // console.log(this.taskTypeSelect)
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          }
+        })
+      },
+      pageChange: function (e) {
+        this.page = e;
+        this.tures = true;
+        this.logList();
+      },
+    },
+    computed: {},
+  }
+</script>
+<style scoped lang='less'>
+  .table {
+    margin-top: 30px;
+  }
+
+  .groupinput {
+    /*display: flex;*/
+    padding-top: 20px;
+    /*padding:0px 0 10px 30px;*/
+  }
+
+  .hang {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 12px;
+    .flesx {
+      flex: 1;
+    }
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+
+  .pagediv {
+    margin: 30px 0 0 30px;
+  }
+
+  .ivu-input {
+    width: 100% !important;
+  }
+
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+</style>

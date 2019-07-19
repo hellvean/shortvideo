@@ -1,0 +1,684 @@
+<template>
+  <div class="basicConfiguration">
+    <Modal
+      v-model="modal"
+      :mask-closable='false'
+      title="添加"
+      @on-ok=""
+      >
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            键：
+          </span>
+          <Input placeholder="请输入键" style="width: 250px" v-model.trim="jian" @on-blur="blur"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            分组：
+          </span>
+          <Input placeholder="请输入分组" style="width: 250px" v-model.trim="fenzu" :disabled='disabled'/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            值：
+          </span>
+          <Input placeholder="请输入值" style="width: 250px" v-model.trim="zhi"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            备注：
+          </span>
+          <Input placeholder="请输入备注" style="width: 250px" v-model.trim="beizu"/>
+        </div>
+      </div>
+        <div slot="footer">
+        <Button type="text" size="large"  @click="cancel">取消</Button>
+        <Button type="primary" size="large"  @click="okjs">确定</Button>
+      </div>
+    </Modal>
+
+        <div class="tabs-top">
+        <div class="tabs-top-name">
+         基础配置
+        </div>
+        <div class="tabs-top-addTask">
+          <Button type="info" @click="addjs">添加</Button>
+        </div>
+      </div>
+    <div class="hang">
+        <span class="qdName">键：</span>
+        <Input v-model="j" placeholder="请输入键" class="qdselect" />
+        <span class="qdName">值：</span>
+        <Input v-model="z" placeholder="请输入值" class="qdselect" />
+        <span class="qdName">分组：</span>
+        <Input v-model="group" placeholder="请输入分组" class="qdselect" />
+    </div>
+    <div class="hang">
+        <span class="qdName">开始时间：</span>
+        <DatePicker type="date" placeholder="请选择开始时间" class="qdselect" v-model.trim="time0" @on-change="model_start"></DatePicker>
+        <span class="qdName">结束时间：</span>
+        <DatePicker type="date" placeholder="请选择结束时间" class="qdselect" v-model.trim="time1" @on-change="model_end"></DatePicker>
+        <Button type="primary" class="subtj" @click="subtj">查询</Button>
+    </div>
+    <div class="table">
+      <Table stripe :columns="columns" :data="data"></Table>
+    </div>
+    <div class="pagediv">
+        <Page :total="zongcount" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'basicConfiguration',
+  data () {
+    return {
+      disabled:false,
+      updateid:'',
+      disab:false,
+      modal:false,
+      zongcount:0,
+      optsarr:[10,20,30,50,80,100],
+      limit:0,
+      page:1,
+      j:'',
+      z:'',
+      group:'',
+      startTime:'',
+      time0:'',
+      endTime:'',
+      time1:'',
+      jian:'',
+      updatajian:'',//修改前后对比
+      fenzu:'',
+      zhi:'',
+      beizu:'',
+      columns:[
+        {
+            title: '键',
+            align:'center',
+            key: 'key'
+        },
+        {
+            title: '值',
+            align:'center',
+            key: 'val'
+        },
+        {
+            title: '分组',
+            align:'center',
+            key: 'group'
+        },
+        {
+            title: '创建时间',
+            align:'center',
+            key: 'time'
+        },
+        {
+            title: '备注',
+            align:'center',
+            key: 'remark'
+        },
+        {
+          title:'状态',
+          align:'center',
+           render: (h, params) => {
+                return h('div', [
+                h('i-switch', {
+    props: {
+     type: 'primary',
+     value: params.row.state2 === 1
+    },
+    style: {
+     marginRight: '5px'
+    },
+    on: {
+     'on-change': (value) => {
+     this.switch(params)
+     }
+    }
+    }, )
+
+                ]);
+            }
+        },
+         {
+            title: '操作',
+            key: 'key15',
+            width: 220,
+            align: 'center',
+            render: (h, params) => {
+                return h('div', [
+                    h('Button', {
+                        props: {
+                            type: 'primary',
+                            size: 'small'
+                        },
+                        style: {
+                            marginRight: '5px'
+                        },
+                        on: {
+                            click: () => {
+                                this.bianji(params)
+                            }
+                        }
+                    }, '编辑'),
+                ]);
+            }
+        }
+      ],
+      data:[],
+    }
+  },
+  created:function(){
+   this.limit=(this.optsarr)[0];
+   this.listdom();
+  },
+  methods:{
+    blur:function(){
+      var _this=this;
+      if(this.jian!=''){
+      this.$http({
+          method:'get',
+          url:_this.url+'/v1/config/findKeyExists?configKey='+this.jian,
+          success:function(response){
+                  if(response.data.code==20000){
+                    if(_this.updatajian==_this.jian && response.data.data!=1){
+                        _this.$Message.warning('键已存在');
+                      }else if(_this.updatajian!=_this.jian && response.data.data!=0){
+                        _this.$Message.warning('键已存在');
+                      }
+
+                  }else if(response.data.code==4001){
+                      _this.$router.push({path:'/login'});
+                  }else{
+                      _this.$Message.warning(response.data.msg);
+                    }
+          },
+          error:function(err){
+              console.log(err);
+          },
+      })
+      }
+    },
+    switch:function(params){
+      var _this=this;
+       var state=params.row.state2;
+       var id=params.row.id;
+       if(state==0){
+         this.$http({
+         method:'put',
+         url:_this.url+'/v1/config/updateConfigState/'+id+'/1',
+         success:function(response){
+                if(response.data.code==20000){
+                   _this.$Message.success('修改成功');
+                   _this.listdom();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+       }else{
+        this.$http({
+         method:'put',
+         url:_this.url+'/v1/config/updateConfigState/'+id+'/0',
+         success:function(response){
+                if(response.data.code==20000){
+                   _this.$Message.success('修改成功');
+                   _this.listdom();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+       }
+    },
+    addjs:function(){
+      this.disabled=false;
+      this.disab=false;
+      this.modal=true;
+      this.updateid='';
+      this.jian='';
+      this.zhi='';
+      this.fenzu='';
+      this.beizu='';
+    },
+    cancel:function(){
+      this.modal=false;
+    },
+    okjs:function(){
+      var _this=this;
+
+        var _key=this.jian;
+        var _fenzu=this.fenzu;
+        var _zhi=this.zhi;
+        var _beizu=this.beizu;
+
+      if(_key=='' && _fenzu==''){
+        this.$Message.warning('键和分组不可都为空');
+        return false;
+      }
+      if(_zhi==''){
+        this.$Message.warning('请填写值');
+        return false;
+      }
+      if(_this.disab){
+        return false;
+      }
+      _this.disab=true;
+      this.modal=false;
+      if(this.updateid==''){
+        //保存
+        if(_key == ''){
+          _this.$http({
+            method:'post',
+            url:_this.url+'/v1/config/saveConfig',
+            data:{
+              'configKey':_key,
+              'configValue':_zhi,
+              'configGroup':_fenzu,
+              'remark':_beizu
+            },
+            success:function(response){
+              if(response.data.code==20000){
+                _this.listdom();
+              }else if(response.data.code==4001){
+                _this.$router.push({path:'/login'});
+              }else{
+                _this.$Message.warning(response.data.msg);
+              }
+            },
+            error:function(err){
+              console.log(err);
+            },
+          })
+        }else{
+          this.$http({
+            method:'get',
+            url:_this.url+'/v1/config/findKeyExists?configKey='+_key,
+            success:function(response){
+              if(response.data.code==20000){
+                if(response.data.data==0){
+                  _this.$http({
+                    method:'post',
+                    url:_this.url+'/v1/config/saveConfig',
+                    data:{
+                      'configKey':_key,
+                      'configValue':_zhi,
+                      'configGroup':_fenzu,
+                      'remark':_beizu
+                    },
+                    success:function(response){
+                      if(response.data.code==20000){
+                        _this.listdom();
+                      }else if(response.data.code==4001){
+                        _this.$router.push({path:'/login'});
+                      }else{
+                        _this.$Message.warning(response.data.msg);
+                      }
+                    },
+                    error:function(err){
+                      console.log(err);
+                    },
+                  })
+                }else{
+                  _this.$Message.warning('键已存在');
+                }
+              }else if(response.data.code==4001){
+                _this.$router.push({path:'/login'});
+              }else{
+                _this.$Message.warning(response.data.msg);
+              }
+            },
+            error:function(err){
+              console.log(err);
+            },
+          })
+        }
+      }else{
+        if(_key==''){
+                this.$http({
+                          method:'put',
+                          url:_this.url+'/v1/config/updateConfig/'+_this.updateid,
+                          data:{
+                            'configKey':_key,
+                            'configValue':_zhi,
+                            'configGroup':_fenzu,
+                            'remark':_beizu
+                          },
+                          success:function(response){
+                                  if(response.data.code==20000){
+                                    _this.$Message.success('修改成功');
+                                    _this.listdom();
+                                  }else if(response.data.code==4001){
+                                      _this.$router.push({path:'/login'});
+                                  }else{
+                                      _this.$Message.warning(response.data.msg);
+                                    }
+                          },
+                          error:function(err){
+                              console.log(err);
+                          },
+                      })
+        }else{
+this.$http({
+         method:'get',
+         url:_this.url+'/v1/config/findKeyExists?configKey='+_key,
+         success:function(response){
+                if(response.data.code==20000){
+                   if(_this.updatajian==_key && response.data.data!=1){
+                      _this.$Message.warning('键已存在');
+                    }else if(_this.updatajian!=_key && response.data.data!=0){
+                      _this.$Message.warning('键已存在');
+                    }else{
+                    //修改
+                          _this.$http({
+                          method:'put',
+                          url:_this.url+'/v1/config/updateConfig/'+_this.updateid,
+                          data:{
+                            'configKey':_key,
+                            'configValue':_zhi,
+                            'configGroup':_fenzu,
+                            'remark':_beizu
+                          },
+                          success:function(response){
+                                  if(response.data.code==20000){
+                                    _this.$Message.success('修改成功');
+                                    _this.listdom();
+                                  }else if(response.data.code==4001){
+                                      _this.$router.push({path:'/login'});
+                                  }else{
+                                      _this.$Message.warning(response.data.msg);
+                                    }
+                          },
+                          error:function(err){
+                              console.log(err);
+                          },
+                      })
+                    }
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+        }
+          
+
+     
+      }
+    },
+    bianji:function(params){
+      this.jian='';
+      this.zhi='';
+      this.fenzu='';
+      this.beizu='';
+      this.disabled=true;
+      var _this=this;
+      this.disab=false;
+      var id=params.row.id;
+      this.$http({
+         method:'get',
+         url:_this.url+'/v1/config/findConfig/'+id,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                   var d=response.data.data;
+                   if(typeof d.id!='undefined'){
+                     _this.updateid=d.id;
+                   }
+                   if(typeof d.configGroup!='undefined'){
+                     _this.fenzu=d.configGroup;
+                   }
+                   if(typeof d.configKey!='undefined'){
+                     _this.jian=d.configKey;
+                     _this.updatajian=d.configKey;
+                   }
+                   if(typeof d.configValue!='undefined'){
+                     _this.zhi=d.configValue;
+                   }
+                   if(typeof d.remark!='undefined'){
+                     _this.beizu=d.remark;
+                   }
+                   _this.modal=true;
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+    },
+    model_start:function(v){
+          this.time0=v;
+          this.startTime=v;
+    },
+    model_end:function(v){
+          this.time1=v;
+          this.endTime=v;
+    },
+   changepage:function(v){
+     this.page=v;
+     this.listdom();
+   },
+   pagesizechange:function(v){
+     this.limit=v;
+     this.page=1;
+     this.listdom();
+   },
+    subtj:function(){
+      this.listdom();
+    },
+    listdom:function(){
+      this.data=[];
+      var _this=this;
+      this.$http({
+         method:'get',
+         url:_this.url+'/v1/config/findConfigList?page='+_this.page+'&limit='+_this.limit+'&startTime='+_this.startTime+'&endTime='+_this.endTime+'&configKey='+_this.j+'&configValue='+_this.z+'&configGroup='+_this.group,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                  _this.zongcount=response.data.count;
+                  _this.dom(response.data.data);
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+    },
+    dom:function(d){
+       if(d.length>0){
+         for(var i=0;i<d.length;i++){
+            var obj={};
+            if(typeof d[i].configGroup!='undefined'){
+             obj.group=d[i].configGroup;
+            }else{
+             obj.group='';
+            }
+            if(typeof d[i].configKey!='undefined'){
+             obj.key=d[i].configKey;
+            }else{
+             obj.key='';
+            }
+            if(typeof d[i].configValue!='undefined'){
+             obj.val=d[i].configValue;
+            }else{
+             obj.val='';
+            }
+            if(typeof d[i].createTime!='undefined'){
+             obj.time=this.$time(d[i].createTime);
+            }else{
+             obj.time='';
+            }
+            if(typeof d[i].id!='undefined'){
+             obj.id=d[i].id;
+            }else{
+             obj.id='';
+            }
+            if(typeof d[i].state!='undefined'){
+             obj.state=d[i].state;
+            }else{
+             obj.state='1';
+            }
+            if(typeof d[i].remark!='undefined'){
+             obj.remark=d[i].remark;
+            }else{
+             obj.remark='';
+            }
+            if(typeof d[i].state!='undefined'){
+              if(d[i].state==0){
+                 obj.state='无效';
+              }else{
+                obj.state='有效';
+              }
+             obj.state2=d[i].state;
+            }else{
+             obj.state='';
+            }
+            (this.data).push(obj);
+         }
+       }
+    },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.addjs{
+  margin:30px 0 0 30px;
+}
+.table{
+  margin-top:30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.subtj{
+  display:block;
+  float:left;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+  .table-task{
+    .task-cz{
+      margin-bottom: 8px;
+      .task-cz-name{
+        width: 150px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+.yingying{
+  position:fixed;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,.5);
+  z-index:3;
+}
+.openthree{
+  background:#ffffff;
+  position:fixed;
+  left:50%;
+  top:50%;
+  z-index:5;
+  height:450px;
+  width:400px;
+  padding:30px 30px 70px 30px;
+  margin-top:-225px;
+  margin-left:-200px;
+  .threeover{
+  height:350px;
+  width:340px;
+ overflow:auto;
+  }
+}
+.mdclose{
+  position:absolute;
+  right:10px;
+  top:10px;
+  font-size:24px;
+  cursor: pointer;
+}
+.button{
+  width:400px;
+  height:40px;
+  position:absolute;
+  left:0;
+  bottom:0;
+  background: #ffffff!important;
+  border-top:solid 1px #dddddd;
+  border-bottom:none;
+.qdthree{
+  float:right;
+  margin-right:10px;
+  margin-top:2px;
+}
+.qxthree{
+  float:right;
+  margin-right:10px;
+  margin-top:2px;
+}
+}
+.basicConfiguration{
+  padding:10px;
+}
+  .tabs-top {
+      width: 100%;
+      height: 50px;
+      border-bottom:solid 1px #cccccc;
+      line-height:40px;
+      padding-bottom:10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+</style>

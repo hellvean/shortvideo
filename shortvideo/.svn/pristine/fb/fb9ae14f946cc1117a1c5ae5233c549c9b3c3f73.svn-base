@@ -1,0 +1,285 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        自动导入记录
+      </div>
+    </div>
+    <div class="hang">
+      <div class="flesx">
+        <span class="qdName">开始时间：</span>
+        <DatePicker type="datetime" v-model="startTime" @on-change="handleChange1" format="yyyy-MM-dd"
+                    placeholder="请选择开始时间"
+                    class="qdselect"></DatePicker>
+      </div>
+      <div class="flesx">
+        <span class="qdName">结束时间：</span>
+        <DatePicker type="datetime" v-model="endTime" @on-change="handleChange2" format="yyyy-MM-dd"
+                    placeholder="请选择结束时间"
+                    class="qdselect"></DatePicker>
+      </div>
+      <div class="flesx">
+        <span class="qdName">操作类型：</span>
+        <Select v-model="operateType" filterable clearable placeholder="请选择任务类型" class="qdselect">
+          <Option v-for="item in operateTypeList" :value="item.value" :key="item.value">{{ item.label }}</Option>
+        </Select>
+      </div>
+    </div>
+    <div class="hang">
+      <div class="flesx">
+        <span class="qdName">批次号：</span>
+        <Input v-model="serialNumber" placeholder="请输入用户名" class="qdselect"/>
+      </div>
+      <div class="flesx">
+        <Button type="primary" class="subtj" @click="select">查询</Button>
+      </div>
+      <div class="flesx"></div>
+    </div>
+    <div class="table">
+      <Table stripe :columns="columns" :data="accountlist"></Table>
+      <div class="pagediv">
+        <Page :total="tots" :page-size="limit" show-elevator show-sizer :page-size-opts="sizes"
+              show-total :current="pages"
+              @on-change="pageChange" @on-page-size-change="pageSize"/>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        operateType:0,
+        operateTypeList: [
+          {
+            value: 0,
+            label: '自动'
+          },
+          {
+            value: 1,
+            label: '手动'
+          }
+        ],
+        startTime: '',
+        endTime: '',
+        serialNumber: '',
+        columns: [
+          {
+            title: '开始时间',
+            key: 'startTime',
+            align: 'center',
+          },
+          {
+            title: '结束时间',
+            key: 'endTime',
+            align: 'center',
+          },
+          {
+            title: '数量',
+            key: 'amount',
+            align: 'center',
+          },
+          {
+            title: '可用用户数',
+            key: 'useableCount',
+            align: 'center',
+          },
+          {
+            title: '批次号',
+            key: 'serialNumber',
+            // width: 90,
+            align: 'center',
+          },
+          {
+            title: '操作类型',
+            key: 'operateType',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.filter(row.operateType)),
+              ]);
+            }
+          },
+          {
+            title: '创建时间',
+            key: 'createTime',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.timeStamp(row.createTime / 1000)),
+              ]);
+            }
+          },
+        ],
+        page:1,
+        pages:1,
+        tures:false,
+        limit: 10,
+        tots:0,
+        sizes: [10, 20, 30, 50, 80, 100],
+        accountlist: [],
+      }
+    },
+    created() {
+      this.startTime = new Date(new Date(new Date().toLocaleDateString()).getTime());
+      this.endTime = new Date(new Date(new Date().toLocaleDateString()).getTime() + 24 * 60 * 60 * 1000);
+      this.select()
+    },
+    methods: {
+      pageChange: function (e) {
+        this.page = e;
+        this.tures = true;
+        this.select();
+      },
+      pageSize: function (e) {
+        this.limit = e;
+        this.page = 1;
+        this.select()
+      },
+      handleChange1: function (e) {
+        // this.startTime = e;
+      },
+      handleChange2: function (e) {
+        // this.endTime = e;
+      },
+      times:function(i){
+        if(i<10){
+          return "0"+i
+        }else{
+          return i;
+        }
+      },
+      select: function () {
+        // console.log(this.startTime)
+        // this.taskType = ((this.taskType == 'undefined' || this.taskType == undefined) ? '' : this.taskType);
+        // if()
+        if(this.tures){
+          this.pages = this.page
+        }else{
+          this.pages = 1;
+        }
+        let t1,t2;
+        if(this.startTime == ''){
+          t1='';
+        }else{
+          t1 = this.startTime.getFullYear() + '-' + this.times(this.startTime.getMonth() + 1) + '-' + this.times(this.startTime.getDate())
+        }
+        if(this.endTime == ''){
+          t2='';
+        }else{
+          t2 = this.endTime.getFullYear() + '-' + this.times(this.endTime.getMonth() + 1) + '-' + this.times(this.endTime.getDate())
+        }
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/accountImport/findAccountImportList?page='+this.page+'&limit='+this.limit+'&startTime='+t1+'&endTime='+t2+'&serialNumber='+this.serialNumber+'&operateType='+this.operateType,
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.tots = res.data.count;
+              this.accountlist = res.data.data;
+              this.page = 1;
+              this.tures = false;
+            } else if (res.data.code == 20003) {
+              this.tots = 0;
+              this.accountlist = [];
+              this.tures = false;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          }
+        })
+      },
+      filter: function (i) {
+        switch (i) {
+          case 0:
+            return '自动';
+            break;
+          case 1:
+            return '手动';
+            break;
+          default:
+            return '错误';
+        }
+      },
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      /*border-bottom: 1px solid #cccccc;*/
+      .tabs-top-name {
+        font-size: 14px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+  .pagediv {
+    margin: 30px 0 0 30px;
+  }
+
+  .hang {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 12px;
+    .flesx {
+      flex: 1;
+    }
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+
+  .ivu-input {
+    width: 100% !important;
+  }
+</style>

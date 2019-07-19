@@ -1,0 +1,646 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        设备类型渠道关联列表
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="modal">添加关联</Button>
+      </div>
+    </div>
+    <div class="hang">
+      <div class="flesx">
+        <span class="qdName">设备号：</span>
+        <Input v-model="device" placeholder="请输入设备号" class="qdselect"/>
+      </div>
+      <div class="flesx">
+        <span class="qdName">权重：</span>
+        <Input v-model="weight" placeholder="请输入权重" class="qdselect"/>
+      </div>
+      <div class="flesx">
+        <span class="qdName">任务类型：</span>
+        <Select v-model="tasktype" filterable clearable class="qdselect">
+          <Option v-for="item in taskTypeList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+        </Select>
+      </div>
+    </div>
+    <div class="hang">
+      <div class="flesx">
+        <span class="qdName">公司：</span>
+        <Select v-model="companyName" filterable clearable @on-change="companySelect" class="qdselect">
+          <Option v-for="item in companyList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+        </Select>
+      </div>
+      <div class="flesx">
+        <span class="qdName">渠道：</span>
+        <Select v-model="channelId" clearable filterable class="qdselect" @on-open-change="channels" placeholder="请先选择公司">
+          <Option v-for="item in channelList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+        </Select>
+      </div>
+      <div class="flesx">
+        <Button type="primary" class="subtj" @click="deviceTaskChannelList">查询</Button>
+      </div>
+    </div>
+    <div class="table">
+      <Table border stripe :columns="columns" :data="data"></Table>
+      <div class="page">
+        <Page :total="tots" :page-size="limit" show-sizer :page-size-opts="sizes" :current="pages"  show-elevator show-total
+              @on-change="pageChange" @on-page-size-change="pageSize"/>
+      </div>
+    </div>
+    <Modal>
+
+    </Modal>
+    <Modal
+      v-model="modals1"
+      :title="tits"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="association">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            零散设备号：
+          </span>
+          <Input placeholder="零散设备号(中间，分隔开)" v-model="association.devices" style="width: 200px"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            连续设备号：
+          </span>
+          <Input placeholder="开始区间输入数字" v-model="association.deviceStart" style="width: auto"/>
+          <Input placeholder="结束区间输入数字" v-model="association.deviceEnd" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            任务类型：
+          </span>
+          <Select v-model="association.taskTypeId" filterable style="width:200px">
+            <Option v-for="item in taskTypeList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            公司：
+          </span>
+          <Select v-model.lazy="association.companyId" filterable @on-change="companySelect" style="width:200px">
+            <Option v-for="item in companyList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            渠道：
+          </span>
+          <Select v-model.lazy="association.channelId" filterable style="width:200px">
+            <Option v-for="item in channelList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            权重：
+          </span>
+          <Input placeholder="权重" prefix="ios-star" v-model="association.weight" style="width: 200px;"/>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large" @click="association_cancel">取消</Button>
+        <Button type="primary" size="large" @click="association_ok">确定</Button>
+      </div>
+    </Modal>
+    <Modal
+      title="提示"
+      v-model="modal2"
+      @on-ok="deletes"
+      :styles="{top: '20px'}">
+      <p>你确定要删除吗？</p>
+      <!--<p>Content of dialog</p>-->
+      <!--<p>Content of dialog</p>-->
+    </Modal>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        fs:false,
+        bj:false,
+        device: '',
+        taskTypeList: '',
+        channelList: '',
+        companyList: '',
+        companyName: '',
+        companyId:'',
+        tasktype: '',
+        channelId: '',
+        weight: '',
+        tots: 0,
+        page: 1,
+        sizes: [10, 20, 30, 50, 80, 100],
+        modal2: false,
+        deleteid: '',
+        editId: '',
+        columns: [
+          {
+            title: '关联id',
+            key: 'id',
+            align: 'center'
+          },
+          {
+            title: '可用的设备信息',
+            // key: 'devices',
+            align: 'center',
+            children: [
+              {
+                title: '零散设备号',
+                align: 'center',
+                key: 'devices',
+              },
+              {
+                title: '连续设备号',
+                align: 'center',
+                children: [
+                  {
+                    title: '开始',
+                    align: 'center',
+                    key: 'deviceStart',
+                  },
+                  {
+                    title: '结束',
+                    align: 'center',
+                    key: 'deviceEnd',
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            title: '任务类型',
+            key: 'taskTypeName',
+            align: 'center',
+          },
+          {
+            title: '渠道名称',
+            key: 'channelName',
+            align: 'center',
+          },
+          {
+            title: '操作',
+            key: 'action',
+            width: 150,
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('Button', {
+                  props: {
+                    type: 'primary',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.edit(params.row.id)
+                    }
+                  }
+                }, '编辑'),
+                h('Button', {
+                  props: {
+                    type: 'error',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.delete(params.row.id)
+                    }
+                  }
+                }, '删除'),
+              ]);
+            }
+          }
+        ],
+        data: [],
+        modals1: false,
+        tits: '',
+        association: {
+          devices: '',
+          deviceStart: '',
+          deviceEnd: '',
+          taskTypeId: '',
+          channelId: '',
+          weight: '',
+          companyId: '',
+        },
+        addedit: false,
+        limit: 10,
+        pages:1,
+        tures:false,
+      }
+    },
+    created() {
+      this.deviceTaskChannelList()
+      this.taskList()
+      this.compList()
+    },
+    methods: {
+      channels:function(){
+        this.channel(this.companyId)
+      },
+      pageSize: function (e) {
+        this.limit = e;
+        this.page = 1;
+        this.deviceTaskChannelList()
+      },
+      association_ok: function () {
+
+        this.channelList = '';
+        if ((this.association.deviceStart != '' || this.association.deviceEnd != '') && (this.association.deviceStart == '' || this.association.deviceEnd == '')) {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '开始区间和结束区间必须同时输入或者不输入'
+          });
+          return false;
+        }
+        if ((this.association.deviceStart == '' && this.association.deviceEnd == '') && (this.association.devices == '')) {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择设备号'
+          });
+          return false;
+        }
+        if (this.association.taskTypeId == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择渠道号'
+          });
+          return false;
+        }
+        // if (this.association.channelId == '') {
+        //   this.$Notice.warning({
+        //     title: '提示',
+        //     desc: '请选择渠道'
+        //   });
+        //   return false;
+        // }
+        if (this.association.weight == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择权重'
+          });
+          return false;
+        }
+        this.modals1 = false;
+        if(this.fs){
+          return false;
+        }
+        this.fs=true;
+        if (this.addedit) {
+          this.modals1 = false;
+          // console.log('添加')
+          // console.log(this.association)
+          delete this.association.companyId;
+          this.$http({
+            method: 'post',
+            url: this.url + '/v1/deviceTypeChannel/saveDeviceTypeChannel',
+            data: this.association,
+            success: ((res) => {
+              // console.log(res);
+
+              if (res.data.code == 20000) {
+                this.$Message.success('添加成功');
+                this.deviceTaskChannelList();
+
+              } else if (res.data.code == 4001) {
+                this.$router.push({path: '/login'});
+
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+
+            },
+          })
+        } else {
+          this.modals1 = false;
+          // console.log('编辑')
+          // console.log(this.association)
+          if (this.association.deviceStart == '') {
+            this.association.deviceStart = 0
+          }
+          if (this.association.deviceEnd == '') {
+            this.association.deviceEnd = 0
+          }
+          this.$http({
+            method: 'put',
+            url: this.url + '/v1/deviceTypeChannel/updateDeviceTypeChannel/' + this.editId,
+            data: this.association,
+            success: ((res) => {
+              // console.log(res);
+              if (res.data.code == 20000) {
+                this.$Message.success('编辑成功');
+                this.deviceTaskChannelList();
+
+              } else if (res.data.code == 4001) {
+                this.$router.push({path: '/login'});
+
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+
+            },
+          })
+        }
+      },
+      association_cancel: function () {
+        // console.log('关闭了')
+        this.channelList = '';
+        this.modals1 = false;
+      },
+      companySelect: function (e) {
+        // console.log(e)
+        this.companyId = e;
+        this.channel(e)
+      },
+      taskList: function () {
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/taskType/findTaskTypeSel',
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.taskTypeList = res.data.data;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      compList: function () {
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/company/findCompanySel',
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.companyList = res.data.data;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      channel: function (e, k) {
+        e = ((e == 'undefined' || e == undefined) ? '' : e);
+        // this.channelList = '';
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/channel/findChannelSel?companyId=' + e,
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.channelList = res.data.data;
+              this.association.channelId = k;
+              // console.log(this.association.channelId)
+            } else if (res.data.code == 20003) {
+              this.channelList = '';
+              this.$Message.warning('该公司对应的渠道没有数据');
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.channelList = '';
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      deviceTaskChannelList: function () {
+        this.tasktype = ((this.tasktype == 'undefined' || this.tasktype == undefined) ? '' : this.tasktype);
+        this.channelId = ((this.channelId == 'undefined' || this.channelId == undefined) ? '' : this.channelId);
+        if(this.tures){
+          this.pages = this.page
+        }else{
+          this.pages = 1;
+        }
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/deviceTypeChannel/findDeviceTypeChannelList?page=' + this.page + '&limit=' + this.limit + '&device=' + this.device + '&taskTypeId=' + this.tasktype + '&channelId=' + this.channelId + '&weight=' + this.weight,
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.data = res.data.data;
+              this.tots = res.data.count;
+              this.page =1;
+              this.tures = false;
+            } else if (res.data.code == 20003) {
+              this.tots = 0;
+              this.data = [];
+              this.tures = false;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      pageChange: function (e) {
+        this.page = e;
+        this.tures = true;
+        this.deviceTaskChannelList()
+      },
+      edit: function (e) {
+        // this.channelList = '';
+
+        this.modals1 = true;
+        this.tits = '编辑';
+        this.addedit = false;
+        if(this.bj){
+          return false;
+        }
+        this.bj=true;
+        // console.log(e)
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/deviceTypeChannel/findDeviceTypeChannel/' + e,
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            this.fs=false;
+            if (res.data.code == 20000) {
+              let da = res.data.data;
+              this.editId = da.id;
+              this.association.devices = da.devices;
+              this.association.deviceStart = da.deviceStart;
+              this.association.deviceEnd = da.deviceEnd;
+              this.association.taskTypeId = da.taskTypeId;
+              this.association.weight = da.weight;
+              this.association.companyId = da.companyId;
+              let e = da.companyId;
+              e = ((e == 'undefined' || e == undefined) ? '' : e);
+              this.$http({
+                method: 'get',
+                url: this.url + '/v1/channel/findChannelSel?companyId=' + e,
+                data: {},
+                success: ((res) => {
+                  if (res.data.code == 20000) {
+                    this.channelList = res.data.data;
+                    this.association.channelId = da.channelId;
+                  } else if (res.data.code == 20003) {
+                    this.channelList = '';
+                    this.$Message.warning('该公司对应的渠道没有数据');
+                  } else {
+                    this.channelList = '';
+                    this.$Message.warning(res.data.msg);
+                  }
+                  this.bj = false;
+                }),
+                error: function (err) {
+                  console.log(err);
+                  this.bj = false;
+                },
+              })
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+              this.bj = false;
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+            this.fs=false;
+            this.bj = false;
+          },
+        })
+      },
+      delete: function (e) {
+        this.deleteid = e;
+        this.modal2 = true;
+      },
+      deletes: function () {
+        console.log(this.deleteid)
+        this.$http({
+          method: 'put',
+          url: this.url + '/v1/deviceTypeChannel/updateDeviceTypeChannelState/' + this.deleteid + '/0',
+          data: {},
+          success: ((res) => {
+            if (res.data.code == 20000) {
+              this.$Message.success('删除成功');
+              this.deviceTaskChannelList();
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      modal: function () {
+        this.modals1 = true;
+        this.tits = '添加';
+        this.addedit = true;
+        this.association.devices = '';
+        this.association.deviceStart = '';
+        this.association.deviceEnd = '';
+        this.association.taskTypeId = '';
+        this.association.channelId = '';
+        this.association.weight = '';
+        this.association.companyId = '';
+        this.fs=false;
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+
+  .hang {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 12px;
+    .flesx {
+      flex: 1;
+    }
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+
+  .ivu-input {
+    width: 100% !important;
+  }
+
+  .subtj {
+    text-align: left;
+  }
+
+  /*.ivu-input-prefix .ivu-icon{*/
+  /*color:red!important;*/
+  /*}*/
+</style>

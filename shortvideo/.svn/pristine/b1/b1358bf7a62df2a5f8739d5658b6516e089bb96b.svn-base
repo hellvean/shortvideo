@@ -1,0 +1,527 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        支付宝信息
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="lookDevice">查看设备运行情况</Button>
+        <Button type="info" @click="lookBalance">查看支付宝余额情况</Button>
+        <Button type="info" @click="lookRecharge">查看充值记录</Button>
+        <Button type="success" @click="showInformation">{{showInformationName}}</Button>
+        <Button type="success" @click="addzfb">新增支付宝账号</Button>
+        <Button type="success" @click="updateBalance">余额更新</Button>
+        <Button type="success" @click="addBalance">添加余额</Button>
+      </div>
+    </div>
+
+    <div v-show="!xxxx">
+      <Table border stripe :columns="columns" :data="data"></Table>
+      <div class="page">
+        <Page :total="100" show-sizer/>
+      </div>
+    </div>
+
+    <div v-if="xxxx">
+      <Table border stripe :columns="columns1" :data="data"></Table>
+      <div class="page">
+        <Page :total="100" show-sizer/>
+      </div>
+    </div>
+
+    <Modal
+      v-model="modal1"
+      :title="tits"
+      @on-ok="ok"
+      @on-cancel="cancel">
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备号1：
+          </span>
+          <Input prefix="ios-star" placeholder="设备号1" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备号2：
+          </span>
+          <Input placeholder="设备号2" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            支付宝账号：
+          </span>
+          <Input prefix="ios-star" placeholder="支付宝账号" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            姓名：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            账号类型：
+          </span>
+          <Input prefix="ios-star" placeholder="账号类型" style="width: auto"/>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="modal2"
+      title="新增支付宝账号"
+      @on-ok="addzfbok"
+      @on-cancel="addzfbcancel">
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            支付宝账号：
+          </span>
+          <Input prefix="ios-star" placeholder="支付宝账号" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            登陆密码：
+          </span>
+          <Input prefix="ios-star" placeholder="登陆密码" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            登陆手机：
+          </span>
+          <Input prefix="ios-star" placeholder="登陆手机" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            登陆手机备注：
+          </span>
+          <Input prefix="ios-star" placeholder="登陆手机备注" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            卡号：
+          </span>
+          <Input prefix="ios-star" placeholder="卡号" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            卡对应的手机：
+          </span>
+          <Input prefix="ios-star" placeholder="卡对应的手机" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            姓名：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            支付宝类型：
+          </span>
+          <Input prefix="ios-star" placeholder="支付宝类型" style="width: auto"/>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="modal3"
+      title="设置余额"
+      @on-ok="updateok"
+      @on-cancel="updatecancel">
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备ID：
+          </span>
+          <Input prefix="ios-star" placeholder="设备ID" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            余额：
+          </span>
+          <Input prefix="ios-star" placeholder="余额" style="width: auto"/>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="modal4"
+      title="添加余额"
+      @on-ok="addok"
+      @on-cancel="addcancel">
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备ID：
+          </span>
+          <Input prefix="ios-star" placeholder="设备ID" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            余额：
+          </span>
+          <Input prefix="ios-star" placeholder="余额" style="width: auto"/>
+        </div>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="modal5"
+      :title="tits"
+      @on-ok="ok"
+      @on-cancel="cancel">
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备号1：
+          </span>
+          <Input prefix="ios-star" placeholder="设备号1" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备号2：
+          </span>
+          <Input placeholder="设备号2" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            支付宝账号：
+          </span>
+          <Input prefix="ios-star" placeholder="支付宝账号" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            卡信息：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            卡对应手机：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            绑定手机：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            卡备注：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            姓名：
+          </span>
+          <Input prefix="ios-star" placeholder="姓名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            账号类型：
+          </span>
+          <Input prefix="ios-star" placeholder="账号类型" style="width: auto"/>
+        </div>
+      </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        showInformationName:'显示详细信息',
+        modal1: false,
+        modal2: false,
+        modal3: false,
+        modal4: false,
+        modal5: false,
+        xxxx: false,
+        tits: '',
+        idshow: false,
+        columns: [{
+          title: '支付宝账号列表',
+          align: 'center',
+          children: [
+            {
+              title: '设备号1',
+              key: 'age',
+              width: 90,
+              align: 'center'
+            },
+            {
+              title: '设备号2',
+              key: 'address',
+              width: 90,
+              align: 'center'
+            },
+            {
+              title: '支付宝账号',
+              key: 'address',
+              align: 'center'
+            },
+            {
+              title: '姓名',
+              key: 'address',
+              // width:700,
+              align: 'center'
+            },
+            {
+              title: '账户类型',
+              key: 'time',
+              align: 'center'
+            },
+            {
+              title: '操作',
+              key: 'action',
+              width: 150,
+              align: 'center',
+              render: (h, params) => {
+                return h('div', [
+                  h('Button', {
+                    props: {
+                      type: 'primary',
+                      size: 'small'
+                    },
+                    style: {
+                      marginRight: '5px'
+                    },
+                    on: {
+                      click: () => {
+                        this.show(params.index)
+                      }
+                    }
+                  }, '编辑'),
+                  h('Button', {
+                    props: {
+                      type: 'error',
+                      size: 'small'
+                    },
+                    on: {
+                      click: () => {
+                        this.recharge(index)
+                      }
+                    }
+                  }, '充值')
+                ]);
+              }
+            }
+          ],
+        }],
+        columns1: [{
+          title: '支付宝账号列表',
+          align: 'center',
+          children: [
+            {
+              title: '设备号1',
+              key: 'age',
+              width: 90,
+              align: 'center'
+            },
+            {
+              title: '设备号2',
+              key: 'address',
+              width: 90,
+              align: 'center'
+            },
+            {
+              title: '支付宝账号',
+              key: 'address',
+              align: 'center'
+            },
+            {
+              title: '卡信息',
+              key: 'address',
+              className: 'show',
+              align: 'center',
+            },
+            {
+              title: '卡对应手机',
+              key: 'address',
+              className: 'show',
+              align: 'center'
+            },
+            {
+              title: '绑定手机',
+              key: 'address',
+              className: 'show',
+              align: 'center'
+            },
+            {
+              title: '卡备注',
+              key: 'address',
+              className: 'show',
+              align: 'center'
+            },
+            {
+              title: '姓名',
+              key: 'address',
+              // width:700,
+              align: 'center'
+            },
+            {
+              title: '账户类型',
+              key: 'time',
+              align: 'center'
+            },
+            {
+              title: '操作',
+              key: 'action',
+              width: 150,
+              align: 'center',
+              render: (h, params) => {
+                return h('div', [
+                  h('Button', {
+                    props: {
+                      type: 'primary',
+                      size: 'small'
+                    },
+                    style: {
+                      marginRight: '5px'
+                    },
+                    on: {
+                      click: () => {
+                        this.show1(params.index)
+                      }
+                    }
+                  }, '编辑'),
+                  h('Button', {
+                    props: {
+                      type: 'error',
+                      size: 'small'
+                    },
+                    on: {
+                      click: () => {
+                        this.recharge(index)
+                      }
+                    }
+                  }, '充值')
+                ]);
+              }
+            }
+          ],
+        }],
+        data: [
+          {
+            name: 'John Brown',
+            age: 18,
+            address: 'New York No. 1 Lake Park',
+            time: '2018-01-01 00:00:00',
+            time1: '2018-01-01 23:59:59',
+          },
+          {
+            name: 'Jim Green',
+            age: 24,
+            address: 'London No. 1 Lake Park',
+            time: '2018-01-01 00:00:00',
+            time1: '2018-01-01 23:59:59',
+          },
+          {
+            name: 'Joe Black',
+            age: 30,
+            address: 'Sydney No. 1 Lake Park',
+            time: '2018-01-01 00:00:00',
+            time1: '2018-01-01 23:59:59',
+          },
+          {
+            name: 'Jon Snow',
+            age: 26,
+            address: 'Ottawa No. 2 Lake Park',
+            time: '2018-01-01 00:00:00',
+            time1: '2018-01-01 23:59:59',
+          }
+        ]
+      }
+    },
+    created() {
+
+    },
+    methods: {
+      ok() {
+        this.$Message.info('Clicked ok');
+      },
+      cancel() {
+        this.$Message.info('Clicked cancel');
+      },
+      show(i) {
+        this.tits = '编辑支付宝账号信息'
+        this.modal1 = true;
+        console.log(i)
+      },
+      show1(i){
+        this.tits = '编辑支付宝账号信息'
+        this.modal5 = true;
+        console.log(i)
+      },
+      showInformation() {
+        // this.idshow = false;
+        // this.tits = '添加代理'
+        // this.modal1 = true;
+      },
+      recharge() {   //充值
+
+      },
+      addzfb() {
+        this.modal2 = true;
+
+      },
+      addzfbok() {
+
+      },
+      addzfbcancel() {   //增加支付宝账号
+
+      },
+      updateBalance() {   //设置余额
+        this.modal3 = true;
+      },
+      addBalance() {
+        this.modal4 = true;
+      },
+      showInformation() {
+        this.xxxx=!this.xxxx;
+        this.showInformationName = (this.xxxx==false?'显示详细信息':'隐藏详细信息')
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 40px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+</style>

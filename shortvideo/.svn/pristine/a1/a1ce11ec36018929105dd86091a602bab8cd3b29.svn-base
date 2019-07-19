@@ -1,0 +1,172 @@
+<template>
+  <div class="taskorderstatistics">
+      <div class="taskinput">
+          <div class="hang">
+             <span class="qdName">查询类型：</span>
+             <RadioGroup v-model="type" class="radio">
+                <Radio label="1">渠道</Radio>
+                <Radio label="2">公司</Radio>
+             </RadioGroup>
+             <span class="qdName">渠道名称：</span>
+             <Select v-model="model8" clearable class="qdselect">
+                  <Option v-for="item in qdselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+              <span class="qdName">公司名称：</span>
+              <Select v-model="model8" clearable class="qdselect">
+                  <Option v-for="item in gsselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+          </div>
+          <div class="hang">
+                <span class="qdName">开始时间：</span>
+                <DatePicker type="datetime" placeholder="Select date and time" class="start"></DatePicker>
+                <span class="qdName">结束时间：</span>
+                <DatePicker type="datetime" placeholder="Select date and time" class="start"></DatePicker>
+                <Button type="primary" class="subtj">提交</Button>
+          </div>
+      </div>
+      <div class="table">
+          <Table stripe :columns="columns1" :data="data1"></Table>
+            <div class="pagediv">
+                <Page :total="5" :page-size="15" show-sizer />
+            </div>
+      </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'taskorderstatistics',
+  data () {
+    return {
+        columns1: [
+                {
+                    title: '公司',
+                    key: 'gs'
+                },
+                {
+                    title: '渠道号',
+                    key: 'qdnum'
+                },
+                {
+                    title: '已付费数',
+                    key: 'yffs'
+                },
+                {
+                    title: '单价',
+                    key: 'dj'
+                },
+                {
+                    title: '总和',
+                    key: 'zh'
+                },
+            ],
+        data1: [
+            {
+                gs:'一天',
+                qdnum:'1566',
+                yffs:'34',
+                dj:'40',
+                zh:'78',
+            }
+          ],
+      type:'1',
+      gsselect:[
+              {
+                  value: 'New York',
+                  label: 'New York'
+              },
+              {
+                  value: 'London',
+                  label: 'London'
+              },
+              {
+                  value: 'Sydney',
+                  label: 'Sydney'
+              },
+              {
+                  value: 'Ottawa',
+                  label: 'Ottawa'
+              },
+              {
+                  value: 'Paris',
+                  label: 'Paris'
+              },
+              {
+                  value: 'Canberra',
+                  label: 'Canberra'
+              }
+          ],
+      qdselect:[
+              {
+                  value: 'New York',
+                  label: 'New York'
+              },
+              {
+                  value: 'London',
+                  label: 'London'
+              },
+              {
+                  value: 'Sydney',
+                  label: 'Sydney'
+              },
+              {
+                  value: 'Ottawa',
+                  label: 'Ottawa'
+              },
+              {
+                  value: 'Paris',
+                  label: 'Paris'
+              },
+              {
+                  value: 'Canberra',
+                  label: 'Canberra'
+              }
+          ],
+    }
+  },
+  components: { // 定义组件
+
+  },
+  methods:{
+
+   
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.taskinput{
+  margin:30px 0 0 30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.radio{
+    float:left;
+    line-height:30px;
+    margin-right:30px;
+}
+.table{
+    margin-top:30px;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+</style>

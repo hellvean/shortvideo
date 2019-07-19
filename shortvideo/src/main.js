@@ -1,0 +1,109 @@
+// The Vue build version to load with the `import` command
+// (runtime-only or standalone) has been set in webpack.base.conf with an alias.
+import Vue from 'vue'
+import axios from 'axios'
+import App from './App'
+import router from './router'
+import store from './store/modules'
+import iView from 'iview'
+import 'iview/dist/styles/iview.css'
+import '../my-theme/index.less'
+//import '../static/css/animate.min.css'
+import url from './assets/js/common.js'
+// import 'babel-polyfill'
+Vue.use(iView)
+Vue.prototype.$time = timerqgs
+Vue.prototype.$http = ajax
+Vue.prototype.url=url;
+Vue.config.productionTip = false
+Vue.prototype.timeStamp = function (time) {
+  var date = new Date(time * 1000);
+  var Y = date.getFullYear() + '-';
+  var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+  var D = date.getDate() + ' ';
+  var h = date.getHours() + ':';
+  var m = date.getMinutes() + '';
+  var s = date.getSeconds();
+
+  if(D < 10){
+    D = "0" + D;
+  }
+
+  return Y + M + D +h+m
+}
+function timerqgs(timestamp){
+  var date = new Date(timestamp);
+   var Y = date.getFullYear() + '-';
+   var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+   var D = this.$tozero(date.getDate()) + ' ';
+   var h = this.$tozero(date.getHours()) + ':';
+   var m = this.$tozero(date.getMinutes()) + ':';
+   var s = this.$tozero(date.getSeconds());
+   return Y+M+D+h+m+s;
+}
+Vue.prototype.$tozero=function(t){
+  return (t<10)?'0'+t:t;
+}
+//时间转时间戳
+Vue.prototype.time = function (index) {
+  var strtime = index;
+  var date = new Date(strtime);
+  var time = Date.parse(date) / 1000;
+  return time
+}
+function ajax(data){
+  axios({
+      method: data.method,
+      url: data.url,
+      data: data.data,
+      headers:{
+          'token': sessionStorage.getItem('HT_token'),
+      }
+  }).then(function(res) {
+    data.success(res);
+  }).catch(function (error) {
+    data.error(error);
+  });
+};
+/* eslint-disable no-new */
+new Vue({
+  el: '#app',
+  router,
+  store,
+  components: { App },
+  template: '<App/>',
+  created:function(){
+   var to=(this.$route.path);
+  if((navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i))) {
+    //"移动端url";
+    if(to=='/login' || to=='/'){
+      document.body.style.width='100%';
+    }else{
+      document.body.style.width='1280px';
+    }
+}
+else {
+    //"pc端url";
+    document.body.style.width='100%';
+}
+
+   
+  },
+  watch: {
+    $route(to, from) {
+    var to=(this.$route.path);
+    if((navigator.userAgent.match(/(phone|pad|pod|iPhone|iPod|ios|iPad|Android|Mobile|BlackBerry|IEMobile|MQQBrowser|JUC|Fennec|wOSBrowser|BrowserNG|WebOS|Symbian|Windows Phone)/i))) {
+      //"移动端url";
+      if(to=='/login' || to=='/'){
+        document.body.style.width='100%';
+      }else{
+        document.body.style.width='1280px';
+      }
+  }
+  else {
+      //"pc端url";
+      document.body.style.width='100%';
+  }
+    }
+    },
+})

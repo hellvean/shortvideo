@@ -1,0 +1,435 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        代理列表
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="modal">添加代理</Button>
+      </div>
+    </div>
+    <div class="hang">
+      <span class="qdName">代理类型：</span>
+      <Select v-model="type" clearable class="qdselect">
+        <Option v-for="item in typeList" :value="item.value" :key="item.value">{{ item.name }}</Option>
+      </Select>
+      <span class="qdName">名称：</span>
+      <Input v-model="account" placeholder="请输入名称" class="qdselect"/>
+      <span class="qdName">设备号：</span>
+      <Input v-model="device" placeholder="请输入设备号" class="qdselect"/>
+      <Button type="primary" class="subtj" @click="porxyList">查询</Button>
+    </div>
+    <Table border stripe :columns="columns" :data="data"></Table>
+    <div class="page">
+      <Page :total="tots" show-elevator show-total show-sizer :page-size="limit" @on-change="pageChange" @on-page-size-change="pageSize"/>
+    </div>
+    <Modal
+      v-model="modal1"
+      :title="tits"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="edit">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            代理类型：
+          </span>
+          <RadioGroup v-model="edit.type">
+            <!--<Radio label="无类型"></Radio>-->
+            <Radio label="1">无极</Radio>
+            <!--<Radio label="太阳"></Radio>-->
+          </RadioGroup>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            名称：
+          </span>
+          <Input prefix="ios-star" placeholder="名称" v-model="edit.account" style="width: 200px"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            密码：
+          </span>
+          <Input prefix="ios-star" placeholder="密码" v-model="edit.password" style="width: 200px"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            零散设备号：
+          </span>
+          <Input placeholder="零散设备号(中间，分隔开)" v-model="edit.devices" style="width: 200px"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            连续设备号：
+          </span>
+          <Input placeholder="开始区间输入数字" v-model="edit.deviceStart" style="width: auto"/>
+          <Input placeholder="结束区间输入数字" v-model="edit.deviceEnd" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            结束时间：
+          </span>
+          <DatePicker type="date" format="yyyy-MM-dd" placeholder="请输入时间"
+                      style="width: 200px" :value="edit.endtime" @on-change="handleChange"></DatePicker>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large"  @click="cancel">取消</Button>
+        <Button type="primary" size="large"  @click="ok">确定</Button>
+      </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        modal1: false,
+        tits: '',
+        idshow: false,
+        page: 1,
+        limit:10,
+        addoredit:false,
+        editId:'',
+        type:'',
+        typeList: [
+          {
+            value: '1',
+            name: '无极'
+          },
+        ],
+        account:'',
+        device:'',
+        edit: {
+          type: 1,
+          account: '',
+          password: '',
+          devices: '',
+          deviceStart: '',
+          deviceEnd: '',
+          endtime: '',
+        },
+        columns: [
+          {
+            title: '代理类型',
+            key: 'type',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.filterType(row.type)),
+              ]);
+            }
+          },
+          {
+            title: '名称',
+            key: 'account',
+            align: 'center'
+          },
+          {
+            title: '密码',
+            key: 'password',
+            align: 'center'
+          },
+          {
+            title: '可用的设备信息',
+            // key: 'devices',
+            align: 'center',
+            children: [
+              {
+                title: '零散设备号',
+                align: 'center',
+                key: 'devices',
+              },
+              {
+                title: '连续设备号',
+                align: 'center',
+                children: [
+                  {
+                    title: '开始',
+                    align: 'center',
+                    key: 'deviceStart',
+                  },
+                  {
+                    title: '结束',
+                    align: 'center',
+                    key: 'deviceEnd',
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            title: '添加时间',
+            key: 'addtime',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.timeStamp(row.addtime / 1000)),
+              ]);
+            }
+          },
+          {
+            title: '到期时间',
+            key: 'endtime',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.timeStamp(row.endtime / 1000)),
+              ]);
+            }
+          },
+          {
+            title: '操作',
+            key: 'action',
+            width: 100,
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('Button', {
+                  props: {
+                    type: 'primary',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.show(params.row.id)
+                    }
+                  }
+                }, '编辑'),
+              ]);
+            }
+          }
+        ],
+        data: [],
+        tots: 0,
+      }
+    },
+    created() {
+      this.porxyList()
+    },
+    methods: {
+      pageSize:function(e){
+        this.limit = e;
+        this.porxyList()
+      },
+      pageChange: function (e) {
+        this.page = e;
+        this.porxyList()
+      },
+      handleChange(daterange) {
+        this.edit.endtime = daterange;
+      },
+      filterType: function (i) {
+        if (i == 1) {
+          return '无极'
+        }
+      },
+      porxyList: function () {
+        this.type= ((this.type=='undefined' || this.type==undefined)?'':this.type);
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/proxy/findProxyList?page=' + this.page + '&limit='+this.limit+'&type='+this.type+'&account='+this.account+'&device='+this.device,
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.data = res.data.data;
+              this.tots = res.data.count;
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      ok() {
+        // console.log(this.edit)
+        if (this.edit.account == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入名称'
+          });
+          return false;
+        }
+        if (this.edit.password == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入密码'
+          });
+          return false;
+        }
+
+        if ((this.edit.deviceStart != '' || this.edit.deviceEnd != '') && (this.edit.deviceStart == '' || this.edit.deviceEnd == '')) {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '开始区间和结束区间必须同时输入或者不输入'
+          });
+          return false;
+        }
+        if (this.edit.endtime == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入结束时间'
+          });
+          return false;
+        }
+        this.modal1 = false;
+        if(this.addoredit){
+          // console.log('添加')
+          this.$http({
+            method: 'post',
+            url: this.url + '/v1/proxy/saveProxy',
+            data: this.edit,
+            success: ((res) => {
+              if (res.data.code == 20000) {
+                this.$Message.success('添加成功');
+                this.porxyList()
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        }else{
+          this.$http({
+            method: 'put',
+            url: this.url + '/v1/proxy/updateProxy/'+this.editId,
+            data: this.edit,
+            success: ((res) => {
+              // console.log(res);
+              if (res.data.code == 20000) {
+                this.$Message.success('编辑成功');
+                this.porxyList()
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        }
+      },
+      cancel() {
+        this.modal1=false;
+        // this.$Message.info('Clicked cancel');
+      },
+      show(i) {
+        this.idshow = true;
+        this.tits = '编辑代理'
+        this.modal1 = true;
+        this.addoredit = false;
+        // console.log(i)
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/proxy/findProxy/'+i,
+          data: this.edit,
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              let da = res.data.data;
+              this.editId = da.id;
+              this.edit.type = da.type.toString();
+              this.edit.account = da.account;
+              this.edit.password = da.password;
+              this.edit.devices = da.devices;
+              this.edit.deviceStart = da.deviceStart;
+              this.edit.deviceEnd = da.deviceEnd;
+              this.edit.endtime = this.tiems(da.endtime);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      tiems:function(t){
+        var date = new Date(t);
+        var Y = date.getFullYear() + '-';
+        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        var D = date.getDate() + ' ';
+        return Y+M+D;
+      },
+      modal() {
+        this.idshow = false;
+        this.edit.type = '1'.toString();
+        this.edit.account = '';
+        this.edit.password = '';
+        this.edit.devices = '';
+        this.edit.deviceStart = '';
+        this.edit.deviceEnd = '';
+        this.edit.endtime = '';
+        this.tits = '添加代理'
+        this.modal1 = true;
+        this.addoredit = true;
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+  .hang {
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+  .ivu-input{
+    width: 100%!important;
+  }
+  /*.ivu-input-prefix .ivu-icon{*/
+  /*color:red!important;*/
+  /*}*/
+</style>

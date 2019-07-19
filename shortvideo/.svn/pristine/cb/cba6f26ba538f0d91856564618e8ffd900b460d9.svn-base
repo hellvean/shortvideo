@@ -1,0 +1,401 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        设备列表
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="adddevice">添加设备</Button>
+      </div>
+    </div>
+    <div class="hang">
+      <span class="qdName">设备号：</span>
+      <Input v-model="device" placeholder="请输入设备号" class="qdselect"/>
+      <span class="qdName">imei：</span>
+      <Input v-model="imei" placeholder="请输入imei" class="qdselect"/>
+      <Button type="primary" class="subtj" @click="deviceList">查询</Button>
+    </div>
+    <div>
+      <Row>
+
+        <div class="divs " v-for="item in devicelist" >
+          <Tooltip placement="top-start" content="Top Left text">
+            <div class="high color1 bg1" v-show="item.bg == 1">{{item.deviceId}}</div>
+            <div class="high color1 bg2" v-show="item.bg == 2">{{item.deviceId}}</div>
+            <div class="high color1 bg3" v-show="item.bg == 3">{{item.deviceId}}</div>
+            <div class="high color1 bg4" v-show="item.bg == 4">{{item.deviceId}}</div>
+            <div slot="content">
+              <p class="">设备号:{{item.deviceId}}</p>
+              <p class="">imei:{{item.imei}}</p>
+              <p class="">心跳时间:{{item.lastHeartTime}}</p>
+            </div>
+          </Tooltip>
+        </div>
+      </Row>
+      <div class="page">
+        <Page :total="totals" show-sizer show-elevator show-total :current="pages" :page-size-opts="sizes"
+              :page-size="limit"
+              @on-change="pageChange" @on-page-size-change="pageSize"/>
+      </div>
+    </div>
+
+    <Modal
+      v-model="modals1"
+      title="添加设备"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="addDevice">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备号：
+          </span>
+          <Input placeholder="开始区间输入数字" v-model="addDevice.deviceStart" style="width: auto"/>
+          <Input placeholder="结束区间输入数字" v-model="addDevice.deviceEnd" style="width: auto"/>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large" @click="device_cancel">取消</Button>
+        <Button type="primary" size="large" @click="device_ok">确定</Button>
+      </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: 'device',
+    data() {
+      return {
+        fs:false,
+        devicelist: '',
+        totals: 1,
+        page: 1,
+        device: '',
+        imei: '',
+        modals1: false,
+        sizes: [100, 150, 200, 250, 300, 350, 400, 450],
+        addDevice: {
+          deviceEnd: 0,
+          deviceStart: 0
+        },
+        limit: 200,
+        content: '',
+        pages: 1,
+        tures: false,
+      }
+    },
+    created() {
+      this.deviceList()
+    },
+    methods: {
+      test: function (i) {
+        this.content = '设备号:' + i.deviceId + ',imei:' + i.imei + ',心跳时间:' + i.lastHeartTime
+      },
+      pageSize: function (e) {
+        this.limit = e;
+        this.page = 1;
+        this.deviceList()
+      },
+      device_ok: function () {
+        if ((this.addDevice.deviceStart == '' || this.addDevice.deviceEnd == '')) {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '开始区间和结束区间不能为空'
+          });
+          return false;
+        }
+        if ((parseFloat(this.addDevice.deviceStart).toString() == 'NaN') || (parseFloat(this.addDevice.deviceEnd).toString() == 'NaN')) {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '区间值必须是数字'
+          });
+          return false;
+        }
+        if (this.addDevice.deviceStart > this.addDevice.deviceEnd) {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '开始区间必须小于结束区间'
+          });
+          return false;
+        }
+        if(this.fs){
+          return false;
+        }
+        this.fs=true;
+        this.modals1 = false;
+        this.$http({
+          method: 'post',
+          url: this.url + '/v1/deviceInfo/saveDeviceBatch?deviceStart=' + this.addDevice.deviceStart + '&deviceEnd=' + this.addDevice.deviceEnd,
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+
+            if (res.data.code == 20000) {
+              this.$Message.success('添加成功');
+              this.deviceList()
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      device_cancel: function () {
+        this.modals1 = false;
+      },
+      pageChange: function (e) {
+        this.page = e;
+        this.tures = true;
+        this.deviceList()
+      },
+      adddevice: function () {
+        this.addDevice.deviceStart = '';
+        this.addDevice.deviceEnd = '';
+        this.modals1 = true;
+        this.fs = false;
+      },
+      times: function (time) {
+        if (time == '') {
+          return '';
+        } else {
+          var date = new Date(time * 1000);
+          var Y = date.getFullYear() + '-';
+          var M = (date.getMonth() + 1 < 10 ? '0' + (date.getMonth() + 1) : date.getMonth() + 1) + '-';
+          var D = date.getDate() + ' ';
+          var h = date.getHours() + ':';
+          var m = date.getMinutes() + ':';
+          var s = date.getSeconds();
+          if (D < 10) {
+            D = "0" + D;
+          }
+          return Y + M + D + h + m + s
+        }
+      },
+      timediff(timespan) {
+        let x;
+        if(timespan == 0){
+          x=4
+          return x;
+        }
+        let timestamp = Date.parse(new Date()) / 1000;
+        let cjtime = Math.ceil(timestamp - timespan);
+        let minutes = Math.floor(cjtime / 60)
+        if(minutes<=10){
+          x=1
+        }else if(30>minutes>10){
+          x=2
+        }else if(minutes>=30){
+          x=3
+        }else{
+          x=4
+        }
+        return x;
+      },
+      deviceList: function () {
+        if (this.tures) {
+          this.pages = this.page
+        } else {
+          this.pages = 1;
+        }
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/deviceInfo/findDeviceList?page=' + this.page + '&limit=' + this.limit + '&device=' + this.device + '&imei=' + this.imei,
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.totals = res.data.count;
+              let da = res.data.data;
+              this.page = 1;
+              this.tures = false;
+              let b = []
+              for (let i = 0; i < da.length; i++) {
+                let d = {};
+                d.deviceId = da[i].deviceId;
+                d.imei = da[i].imei;
+                let timestamp = Date.parse(new Date());
+                let jltime = this.timediff(da[i].lastHeartTime / 1000);
+                // console.log(jltime)
+                d.bg = jltime;
+                d.lastHeartTime = this.times(da[i].lastHeartTime / 1000)
+                b.push(d)
+              }
+              this.devicelist = b;
+            } else if (res.data.code == 20003) {
+              this.totals = 0;
+              this.devicelist = [];
+              this.tures = false;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    /*background-color: #f6f6f6;*/
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 14px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+    /*background-color: #f6f6f6;*/
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+
+  .hang {
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+
+  .ivu-input {
+    width: 100% !important;
+  }
+
+  .ivu-col-span-2:nth-child(odd) {
+    padding-left: 10px;
+    height: 60px;
+    margin: 5px;
+    border: 1px solid #cccccc;
+    /*background-color: rgb(47,189,253);*/
+    border-radius: 10px;
+    color: #000000;
+  }
+
+  .ivu-col-span-2:nth-child(even) {
+    padding-left: 10px;
+    height: 60px;
+    margin: 5px;
+    border: 1px solid #cccccc;
+    /*background-color: rgb(21,157,67);*/
+    border-radius: 10px;
+    color: #000000;
+  }
+
+  .bgc1 {
+    background-color: #00cc66;
+  }
+
+  .highs2, .highs3 {
+    /*height: 30px;*/
+    /*line-height: 30px;*/
+  }
+  .high{
+    display: inline-block;
+    width: 80px;
+    /*padding-left: 10px;*/
+    height: 40px;
+    line-height: 40px;
+    /*margin: 5px;*/
+    /*font-size: 36px;*/
+    /*border: 1px solid #cccccc;*/
+    /*background-color: rgb(21,157,67);*/
+    border-radius: 10px;
+    /*text-align: center;*/
+  }
+
+  .color1 {
+    color: #ffffff;
+    font-size: 24px;
+  }
+
+  .color2 {
+    color: #ffffff;
+    font-size: 24px;
+  }
+
+  .color3 {
+    color: hotpink;
+    font-size: 8px;
+  }
+
+  .bg3 {
+    background: red;
+  }
+
+  .bg2 {
+    background: orange;
+  }
+
+  .bg1 {
+    /*background: #ffffff;*/
+    color: #000;
+  }
+  .bg4{
+    background: #cc9933;
+    /*color: #AB82FF;*/
+  }
+
+  .divs {
+
+    display: inline-block;
+    width: 80px;
+    /*padding-left: 10px;*/
+    height: 40px;
+    line-height: 40px;
+    margin: 5px;
+    /*font-size: 36px;*/
+    border: 1px solid #cccccc;
+    /*background-color: rgb(21,157,67);*/
+    border-radius: 10px;
+    text-align: center;
+    /*color: #000000;*/
+    /*overflow: hidden;*/
+    /*text-overflow: ellipsis;*/
+    /*white-space: nowrap;*/
+  }
+</style>

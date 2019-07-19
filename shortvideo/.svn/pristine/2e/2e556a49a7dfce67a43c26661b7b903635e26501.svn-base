@@ -1,0 +1,18 @@
+<template>
+    <Submenu name="cpa">
+        <template slot="title">
+            <Icon type="ios-paper" />
+            CPA中心
+        </template>
+        <MenuItem name="cpa-1"><router-link to='/taskType' style="color:#ffffff;display:block;">任务类型</router-link></MenuItem>
+        <MenuItem name="cpa-2"><router-link to='/taskordering' style="color:#ffffff;display:block;">任务订购</router-link></MenuItem>
+        <MenuItem name="cpa-3"><router-link to='/jf_taskordering' style="color:#ffffff;display:block;">计费任务订购</router-link></MenuItem>
+        <MenuItem name="cpa-4"><router-link to='/' style="color:#ffffff;display:block;">任务日志</router-link></MenuItem>
+        <MenuItem name="cpa-5"><router-link to='/' style="color:#ffffff;display:block;">用户信息统计</router-link></MenuItem>
+        <MenuItem name="cpa-6"><router-link to='/' style="color:#ffffff;display:block;">代理</router-link></MenuItem>
+        <MenuItem name="cpa-7"><router-link to='/' style="color:#ffffff;display:block;">支付宝信息</router-link></MenuItem>
+        <MenuItem name="cpa-8"><router-link to='/' style="color:#ffffff;display:block;">任务订购统计</router-link></MenuItem>
+        <MenuItem name="cpa-9"><router-link to='/' style="color:#ffffff;display:block;">任务订购统计-每天</router-link></MenuItem>
+    </Submenu>
+</template>
+  

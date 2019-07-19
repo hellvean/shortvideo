@@ -1,0 +1,235 @@
+<template>
+  <div class="tasklog">
+      <div class="groupinput">
+            <div class="hang">
+                <span class="qdName">username：</span>
+                <Input v-model="username" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">deviceid：</span>
+                <Input v-model="qdName" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">missionname：</span>
+                <Input v-model="missionname" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">typename：</span>
+                <Input v-model="typename" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">cm：</span>
+                <Input v-model="cm" placeholder="Enter something..." class="qdselect"/>
+            </div>
+            <div class="hang">
+                <span class="qdName">msg：</span>
+                <Input v-model="msg" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">missionid：</span>
+                <Input v-model="missionid" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">type：</span>
+                <Input v-model="type" placeholder="Enter something..." class="qdselect"/>
+                <span class="qdName">任务类型：</span>
+                <Select v-model="model8" clearable class="qdselect">
+                    <Option v-for="item in rwselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+                </Select>
+            </div>
+            <div class="hang">
+                <span class="qdName">开始时间：</span>
+                <DatePicker type="datetime" placeholder="Select date and time" class="qdselect"></DatePicker>
+                <span class="qdName">结束时间：</span>
+                <DatePicker type="datetime" placeholder="Select date and time" class="qdselect"></DatePicker>
+                <Button type="primary" class="subtj">提交</Button>
+            </div>
+      </div>
+      <div class="table">
+            <Table stripe :columns="columns1" :data="data1"></Table>
+            <div class="pagediv">
+                <Page :total="5" :page-size="15" show-sizer />
+            </div>
+      </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'tasklog',
+  data () {
+    return {
+        columns1: [
+                    {
+                        title: 'username',
+                        key: 'username'
+                    },
+                    {
+                        title: 'deviceid',
+                        key: 'deviceid'
+                    },
+                    {
+                        title: 'type',
+                        key: 'type'
+                    },
+                    {
+                        title: 'password',
+                        key: 'password'
+                    },
+                    {
+                        title: 'cm',
+                        key: 'cm'
+                    },
+                    {
+                        title: 'msg',
+                        key: 'msg'
+                    },
+                    {
+                        title: 'missionid',
+                        key: 'missionid'
+                    },
+                    {
+                        title: 'missionname',
+                        key: 'missionname'
+                    },
+                    {
+                        title: 'userid',
+                        key: 'userid'
+                    },
+                    {
+                        title: 'missiontype',
+                        key: 'missiontype'
+                    },
+                    {
+                        title: 'typename',
+                        key: 'typename'
+                    },
+                    {
+                        title: 'addtime',
+                        key: 'addtime'
+                    },
+                ],
+                data1: [
+                    {
+                        username:'111',
+                        deviceid:'22',
+                        type:'11',
+                        password:'324343',
+                        cm:'3434',
+                        msg:'法国第三方',
+                        missionid:'2343',
+                        missionname:'二等分',
+                        userid:'11',
+                        missiontype:'11',
+                        typename:'任务',
+                        addtime:'2018-9-9',
+                    },
+                    {
+                        username:'111',
+                        deviceid:'22',
+                        type:'11',
+                        password:'324343',
+                        cm:'3434',
+                        msg:'法国第三方',
+                        missionid:'2343',
+                        missionname:'二等分',
+                        userid:'11',
+                        missiontype:'11',
+                        typename:'任务',
+                        addtime:'2018-9-9',
+                    },
+                    {
+                        username:'111',
+                        deviceid:'22',
+                        type:'11',
+                        password:'324343',
+                        cm:'3434',
+                        msg:'法国第三方',
+                        missionid:'2343',
+                        missionname:'二等分',
+                        userid:'11',
+                        missiontype:'11',
+                        typename:'任务',
+                        addtime:'2018-9-9',
+                    },
+                    {
+                        username:'111',
+                        deviceid:'22',
+                        type:'11',
+                        password:'324343',
+                        cm:'3434',
+                        msg:'法国第三方',
+                        missionid:'2343',
+                        missionname:'二等分',
+                        userid:'11',
+                        missiontype:'11',
+                        typename:'任务',
+                        addtime:'2018-9-9',
+                    },
+                    
+                ],
+        username:'',
+        qdName:'',
+        missionname:'',
+        typename:'',
+        cm:'',
+        msg:'',
+        missionid:'',
+        type:'',
+        rwselect:[
+                    {
+                        value: 'New York',
+                        label: 'New York'
+                    },
+                    {
+                        value: 'London',
+                        label: 'London'
+                    },
+                    {
+                        value: 'Sydney',
+                        label: 'Sydney'
+                    },
+                    {
+                        value: 'Ottawa',
+                        label: 'Ottawa'
+                    },
+                    {
+                        value: 'Paris',
+                        label: 'Paris'
+                    },
+                    {
+                        value: 'Canberra',
+                        label: 'Canberra'
+                    }
+                ],
+    }
+  },
+  components: { // 定义组件
+
+  },
+  methods:{
+
+   
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.table{
+    margin-top:30px;
+}
+.groupinput{
+    margin:30px 0 0 30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+}
+ .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:110px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect{
+    display:block;
+    float:left;
+    width:160px;
+    margin-right:20px;
+  }
+.pagediv{
+  margin:30px 0 0 30px;
+}
+</style>

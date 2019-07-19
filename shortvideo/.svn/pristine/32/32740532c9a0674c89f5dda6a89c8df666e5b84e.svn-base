@@ -1,0 +1,25 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+import login from '@/page/login'
+import home from '@/page/home'
+import welcome from '@/page/welcome'
+import taskordering from '@/page/taskordering'
+import jf_taskordering from '@/page/jf_taskordering'
+import taskType from '@/page/taskType'
+Vue.use(Router)
+export default new Router({
+  routes: [
+    {path: '/',name: 'login',component: login},
+    {path: '/login',name: 'login',component: login},
+    {path: '/home',name: 'home',component: home,
+      children:[
+        { path: '/',name:'welcome',component:welcome},
+        { path: '/taskordering',name:'welcome',component:taskordering},
+        { path: '/jf_taskordering',name:'welcome',component:jf_taskordering},
+        { path: '/taskType',name: 'taskType',component: taskType
+        }
+      ]
+    },
+    
+  ]
+})

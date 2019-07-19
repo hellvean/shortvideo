@@ -1,0 +1,63 @@
+import Vue from 'vue'
+import Router from 'vue-router'
+import login from '@/page/login'
+import home from '@/page/home'
+import welcome from '@/page/welcome'
+import taskordering from '@/page/taskordering'
+import jf_taskordering from '@/page/jf_taskordering'
+import taskType from '@/page/taskType'
+import tasklog from '@/page/tasklog'
+import taskOrderStatistics from '@/page/taskOrderStatistics'
+import userManage from '@/page/userManage'
+import userList from '@/page/userList'
+import role from '@/page/role'
+
+import upload from '@/page/upload'
+import bj_upload from '@/page/bj_upload'
+import applist from '@/page/applist'
+import companyManagement from '@/page/companyManagement'
+import deviceTaskChannel from '@/page/deviceTaskChannel'
+import device from '@/page/device'
+import porxy from '@/page/porxy'
+import appDetailed from '@/page/appDetailed'
+import channel from '@/page/channel'
+import error from '@/page/error'
+import taskorderxq from '@/page/taskorderxq'
+import table from '@/page/table'
+import fillmodel from '@/page/fillmodel'
+import Monitor from '@/page/Monitor'
+Vue.use(Router)
+export default new Router({
+  mode: 'history',
+  routes: [
+    {path: '/',name: 'login',component: login},
+    {path: '/login',name: 'login',component: login},
+    {path: '/home',name: 'home',component: home,
+      children:[
+        { path: '/',name:'welcome',component:welcome},
+        { path: '/taskordering',name:'taskordering',component:taskordering},
+        { path: '/jf_taskordering',name:'jf_taskordering',component:jf_taskordering},
+        { path: '/taskType',name: 'taskType',component: taskType},
+        { path: '/tasklog',name: 'tasklog',component: tasklog},
+        { path: '/taskOrderStatistics',name: 'taskOrderStatistics',component: taskOrderStatistics},
+        { path: '/role',name: 'role',component: role},
+        { path: '/userManage',name: 'userManage',component: userManage},
+        { path: '/userList',name: 'userList',component: userList},
+        { path: '/upload',name: 'upload',component: upload},
+        { path: '/bj_upload',name: 'bj_upload',component: bj_upload},
+        { path: '/applist',name: 'applist',component: applist},
+        { path: '/companyManagement',name: 'companyManagement',component: companyManagement},
+        { path: '/porxy',name: 'porxy',component: porxy},
+        { path: '/appDetailed/:id',name: 'appDetailed',component: appDetailed},
+        { path: '/channel',name: 'channel',component: channel},
+        { path: '/device',name: 'device',component: device},
+        { path: '/taskorderxq',name: 'taskorderxq',component: taskorderxq},
+        { path: '/deviceTaskChannel',name: 'deviceTaskChannel',component: deviceTaskChannel},
+        { path: '/table',name: 'table',component: table},
+        { path: '/fillmodel',name: 'fillmodel',component: fillmodel},
+        { path: '/Monitor',name: 'Monitor',component: Monitor},
+      ]
+    },
+    { path: '*',name: 'error',component: error},
+  ]
+})

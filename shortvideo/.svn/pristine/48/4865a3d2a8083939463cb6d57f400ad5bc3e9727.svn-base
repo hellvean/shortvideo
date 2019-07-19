@@ -1,0 +1,418 @@
+<template>
+  <div class="taskordering">
+      <div class="taskinput">
+          <div class="hang">
+               <span class="qdName">公司名称：</span>
+               <Select v-model="channelId" filterable class="qdselect" @on-change="gschange">
+                  <Option v-for="item in gsselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+
+               <span class="qdName">渠道名称：</span>
+               <Select v-model="companyId" filterable class="qdselect">
+                  <Option v-for="item in qdselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+          </div>
+          <div class="hang">
+              <span class="qdName">任务类型：</span>
+              <Select v-model="taskTypeId" filterable class="qdselect">
+                 <Option v-for="item in rwselect" :value="item.value" :key="item.value">{{ item.label }}</Option>
+             </Select>
+             <span class="qdName">开始时间：</span>
+             <DatePicker type="datetime" placeholder="Select date and time" class="start" @on-change="start"></DatePicker>
+             <span class="qdName">结束时间：</span>
+             <DatePicker type="datetime" placeholder="Select date and time" class="start" @on-change="endt"></DatePicker>
+             <Button type="primary" class="subtj" @click="subtj">提交</Button>
+          </div>
+      </div>
+      <div class="table">
+          <Table stripe :columns="columns7" :data="data6"></Table>
+          <div class="pagediv">
+             <Page :total="zongcount" :page-size="limit" show-elevator show-total @on-change="changepage"/>
+          </div>
+      </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'taskordering',
+  data () {
+    return {
+        zongcount:0,
+        limit:10,
+        page:1,
+        channelId:'',
+        companyId:'',
+        taskTypeId:'',
+        startTime:'',
+        endTime:'',
+        modelrw:'',
+        model8:'',
+      columns7: [
+                    {
+                        title: '任务类型ID',
+                        key: 'rwlxid',
+                    },
+                    {
+                        title: '任务逻辑ID',
+                        key: 'rwljid'
+                    },
+                    {
+                        title: 'app逻辑ID',
+                        key: 'appljid'
+                    },
+                    {
+                        title:'公司ID',
+                        key: 'gsid'
+                    },
+                    {
+                        title:'渠道ID',
+                        key: 'qdid'
+                    },
+                    {
+                        title:'任务执行时间',
+                        key: 'rwzxtime'
+                    },
+                    {
+                        title:'任务总数',
+                        key: 'rwzs'
+                    },
+                    {
+                        title:'已完成的任务数量',
+                        key: 'ywcrwsl'
+                    },
+                    {
+                        title:'每小时需要完成的任务数量',
+                        key: 'mxsrwsl'
+                    },
+                    {
+                        title:'每小时留存任务比率',
+                        key: 'mxsrwbl'
+                    },
+                    {
+                        title:'支付类型',
+                        key: 'zflx'
+                    },
+                    {
+                        title:'书籍类型',
+                        key: 'sjlx'
+                    },
+                    {
+                        title:'是否需要用户',
+                        key: 'sfxyyh'
+                    },
+                    {
+                        title:'上次激活时间',
+                        key: 'scjhtime'
+                    },
+                    {
+                        title: '操作',
+                        key: 'key15',
+                        width: 120,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.show(params)
+                                        }
+                                    }
+                                }, '详情'),
+                                /*
+                                h('Button', {
+                                    props: {
+                                        type: 'error',
+                                        size: 'small'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.remove(params.index)
+                                        }
+                                    }
+                                }, '每小时下发完成情况')
+                                */
+                            ]);
+                        }
+                    }
+                ],
+                data6: [],
+                
+           qdselect: [],
+           gsselect: [],
+           rwselect: [],
+    }
+  },
+  components: { // 定义组件
+
+  },
+  created:function(){
+      //任务类型下拉
+      this.renwu();
+      //公司下拉
+      this.gsdata();
+      //list列表
+      this.list();
+  },
+  methods:{
+      start:function(v){
+        this.startTime=v;
+      },
+      endt:function(v){
+          this.endTime=v;
+      },
+      subtj:function(){
+        this.page=1;
+        this.list();
+      },
+    changepage:function(v){
+        this.page=v;
+        this.list();
+    },
+    qdlist:function(){
+         var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/channel/findChannelSel?companyId='+this.channelId,
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+              _this.qddom(response.data.data);
+            }else{
+                _this.$Message.warning(response.data.message);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+    qddom:function(data){
+      this.qdselect.length=0;
+      for(var i=0;i<data.length;i++){
+          var obj={};
+          obj.value=data[i].id;
+          obj.label=data[i].name;
+           (this.qdselect).push(obj);
+      }
+    },
+    gschange:function(){
+        this.qdlist();
+    },
+    gsdata:function(){
+        var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/company/findCompanySel',
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+              _this.gsdom(response.data.data);
+            }else{
+                _this.$Message.warning(response.data.message);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+    gsdom:function(data){
+      this.gsselect.length=0;
+      for(var i=0;i<data.length;i++){
+          var obj={};
+          obj.value=data[i].id;
+          obj.label=data[i].name;
+           (this.gsselect).push(obj);
+      }
+    },
+    list:function(){
+        var _this=this;
+         this.$http({
+         method:'get',
+         url:_this.url+'/v1/taskDetail/findTaskPageList?page='+this.page+'&limit='+this.limit+'&companyId='+this.companyId+'&taskTypeId='+this.taskTypeId+'&startTime='+this.startTime+'&endTime='+this.endTime,
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+               _this.zongcount=response.data.count;
+               _this.listdom(response.data.data);
+            }else{
+                _this.$Message.warning(response.data.message);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+     timestampToTime:function(timestamp){
+       var date = new Date(timestamp);
+        var Y = date.getFullYear() + '-';
+        var M = (date.getMonth()+1 < 10 ? '0'+(date.getMonth()+1) : date.getMonth()+1) + '-';
+        var D = date.getDate() + ' ';
+        var h = date.getHours() + ':';
+        var m = date.getMinutes() + ':';
+        var s = date.getSeconds();
+        return Y+M+D+h+m+s;
+    },
+    listdom:function(d){
+        this.data6.length=0;
+        for(var i=0;i<d.length;i++){
+            var obj={};
+            if(typeof d[i].taskTypeId!='undefined'){
+                obj.rwlxid=d[i].taskTypeId;
+            }else{
+                obj.rwlxid='';
+            }
+            if(typeof d[i].taskLogicalId!='undefined'){
+                obj.rwljid=d[i].taskLogicalId;
+            }else{
+                obj.rwljid='';
+            }
+            if(typeof d[i].appLogicalId!='undefined'){
+                obj.appljid=d[i].appLogicalId;
+            }else{
+                obj.appljid='';
+            }
+            if(typeof d[i].companyId!='undefined'){
+                obj.gsid=d[i].companyId;
+            }else{
+                obj.gsid='';
+            }
+            if(typeof d[i].channelId!='undefined'){
+                obj.qdid=d[i].channelId;
+            }else{
+                obj.qdid='';
+            }
+            if(typeof d[i].executionTime!='undefined'){
+                obj.rwzxtime=this.timestampToTime(d[i].executionTime);
+            }else{
+                obj.rwzxtime='';
+            }
+            if(typeof d[i].needActiveCount!='undefined'){
+                obj.rwzs=d[i].needActiveCount;
+            }else{
+                obj.rwzs='';
+            }
+            if(typeof d[i].doActiveCount!='undefined'){
+                obj.ywcrwsl=d[i].doActiveCount;
+            }else{
+                obj.ywcrwsl='';
+            }
+            if(typeof d[i].activeCountHour!='undefined'){
+                obj.mxsrwsl=1;
+            }else{
+                obj.mxsrwsl='';
+            }
+            if(typeof d[i].retainPercentHour!='undefined'){
+                obj.mxsrwbl=1;
+            }else{
+                obj.mxsrwbl='';
+            }
+            if(typeof d[i].payType!='undefined'){
+                obj.zflx=d[i].payType;
+            }else{
+                obj.zflx='';
+            }
+            if(typeof d[i].bookType!='undefined'){
+                obj.sjlx=d[i].bookType;
+            }else{
+                obj.sjlx='';
+            }
+            if(typeof d[i].needUser!='undefined'){
+                if(d[i].bookType==1){
+                    obj.sfxyyh='需要';
+                }else{
+                    obj.sfxyyh='不需要';
+                }
+            }else{
+                obj.sfxyyh='';
+            }
+            if(typeof d[i].lastActiveTime!='undefined'){
+                obj.scjhtime=d[i].lastActiveTime;
+            }else{
+                obj.scjhtime='';
+            }
+            (this.data6).push(obj);
+        }
+    },
+    renwu:function(){
+        var _this=this;
+        this.$http({
+         method:'get',
+         url:_this.url+'/v1/taskType/findTaskTypeSel',
+         data:{},
+         success:function(response){
+            if(response.data.code==20000){
+                _this.rwselect.length=0;
+                if(response.data.data.length>0){
+                    var rwlist=response.data.data;
+                    for(var i=0;i<rwlist.length;i++){
+                        var obj={};
+                        obj.value=rwlist[i].id;
+                        obj.label=rwlist[i].name;
+                        (_this.rwselect).push(obj);
+                    }
+                }
+            }else{
+                _this.$Message.warning(response.data.message);
+            }
+         },
+         error:function(err){
+             console.log(err);
+         },
+     })
+    },
+    show:function(parms){
+        console.log(parms);
+    },
+   
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.taskinput{
+  margin:30px 0 0 30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.subtj{
+  display:block;
+  float:left;
+}
+.table{
+  margin-top:30px;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+.taskordering{
+    padding: 10px;
+}
+</style>

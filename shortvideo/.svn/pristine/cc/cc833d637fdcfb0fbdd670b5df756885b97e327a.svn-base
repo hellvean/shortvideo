@@ -1,0 +1,51 @@
+<template>
+    <Submenu :name="data.index" v-if="data.children.length>0">
+        <template slot="title">
+            <Icon type="ios-paper" />
+            {{data.name}}
+        </template>
+        <!--
+        <MenuItem name="cpa-1"><router-link to='/taskType' style="color:#ffffff;display:block;">任务类型</router-link></MenuItem>
+        <MenuItem name="cpa-2"><router-link to='/taskordering' style="color:#ffffff;display:block;">任务订购</router-link></MenuItem>
+        <MenuItem name="cpa-3"><router-link to='/jf_taskordering' style="color:#ffffff;display:block;">计费任务订购</router-link></MenuItem>
+        <MenuItem name="cpa-4"><router-link to='/tasklog' style="color:#ffffff;display:block;">任务日志</router-link></MenuItem>
+        <MenuItem name="cpa-5"><router-link to='/' style="color:#ffffff;display:block;">用户信息统计</router-link></MenuItem>
+        <MenuItem name="cpa-6"><router-link to='/' style="color:#ffffff;display:block;">代理</router-link></MenuItem>
+        <MenuItem name="cpa-7"><router-link to='/' style="color:#ffffff;display:block;">支付宝信息</router-link></MenuItem>
+        <MenuItem name="cpa-8"><router-link to='/taskOrderStatistics' style="color:#ffffff;display:block;">任务订购统计</router-link></MenuItem>
+        <MenuItem name="cpa-9"><router-link to='/' style="color:#ffffff;display:block;">任务订购统计-每天</router-link></MenuItem>
+        -->
+        <MenuItem v-for="(item,index) in data.children" :name="item.index"><router-link :to='item.url' style="color:#ffffff;display:block;">{{item.name}}</router-link></MenuItem>
+        
+      
+    </Submenu>
+</template>
+  
+<script>
+export default {
+  props: ['data'],
+  name: 'cpamenu',
+  data () {
+    return {
+      list:'',
+    }
+  },
+  watch:{
+  
+  },
+  created:function(){
+
+        
+  },
+  components: { // 定义组件
+ 
+  },
+  methods:{
+   
+   
+ },
+  computed:{
+
+	},
+}
+</script>

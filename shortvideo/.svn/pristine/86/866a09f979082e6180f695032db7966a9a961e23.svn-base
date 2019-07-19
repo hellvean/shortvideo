@@ -1,0 +1,547 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        用户列表
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="modal">添加用户</Button>
+      </div>
+    </div>
+
+    <div class="hang">
+      <span class="qdName">账号：</span>
+      <Input v-model="username" placeholder="请输入账号" class="qdselect"/>
+      <span class="qdName">昵称：</span>
+      <Input v-model="name" placeholder="请输入用户名" class="qdselect"/>
+      <Button type="primary" class="subtj" @click="userLists">查询</Button>
+    </div>
+
+    <Table border stripe :columns="columns" :data="data.data"></Table>
+    <div class="page">
+      <Page :total="data.totals" show-elevator show-total show-sizer :page-size-opts="sizes" :page-size="limit" @on-change="pageChange" @on-page-size-change="pageSize"/>
+    </div>
+    <Modal
+      v-model="modals"
+      title="添加用户"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="addUser">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            账号：
+          </span>
+          <Input prefix="ios-star" placeholder="名称" v-model="addUser.username" @on-blur="checkName"
+                 style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            密码：
+          </span>
+          <Input prefix="ios-star" placeholder="密码" v-model="addUser.password" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            昵称：
+          </span>
+          <Input placeholder="用户名" prefix="ios-star" v-model="addUser.name" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            角色：
+          </span>
+          <Select v-model="model1" filterable style="width:200px" @on-change="selectChange">
+            <Option v-for="item in rolelist" :value="item.id" :key="item.id">{{ item.roleName}}</Option>
+          </Select>
+          <!--<Input prefix="ios-star" placeholder="角色" style="width: auto"/>-->
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large" @click="cancel">取消</Button>
+        <Button type="primary" size="large" @click="ok">确定</Button>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="modals1"
+      title="修改密码"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="modify">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            账号：
+          </span>
+          <Input prefix="ios-star" placeholder="名称" v-model="modify.username" disabled style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            旧密码：
+          </span>
+          <Input prefix="ios-star" placeholder="旧密码" type="password" v-model="modify.oldPwd" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            新密码：
+          </span>
+          <Input placeholder="新密码" prefix="ios-star" type="password" v-model="modify.newPwd" style="width: auto"/>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large" @click="modify_cancel">取消</Button>
+        <Button type="primary" size="large" @click="modify_ok">确定</Button>
+      </div>
+    </Modal>
+
+    <Modal
+      title="提示"
+      v-model="modal2"
+      @on-ok="deletes"
+      :styles="{top: '20px'}">
+      <p>你确定要删除吗？</p>
+      <!--<p>Content of dialog</p>-->
+      <!--<p>Content of dialog</p>-->
+    </Modal>
+    <Modal
+      title="提示"
+      v-model="modal3"
+      @on-ok="resets"
+      :styles="{top: '20px'}">
+      <p>你确定要重置吗？</p>
+      <!--<p>Content of dialog</p>-->
+      <!--<p>Content of dialog</p>-->
+    </Modal>
+  </div>
+</template>
+
+<script>
+  var sha256 = require("sha256");
+  export default {
+    name:'userList',
+    data() {
+      return {
+        tj:false,
+        tjs:false,
+        modals: false,
+        username:'',
+        name:'',
+        modals1: false,
+        modal2:false,
+        modal3:false,
+        deletesId:'',
+        resetusername:'',
+        addUser: {
+          id: '',
+          username: '',
+          password: "",
+          name: ''
+        },
+        page: 1,
+        limit:10,
+        sizes:[10,20,30,50,80,100],
+        columns: [
+          {
+            title: '账号',
+            key: 'username',
+            width: 90,
+            align: 'center'
+          },
+          {
+            title: '昵称',
+            key: 'name',
+            align: 'center'
+          },
+          {
+            title: '角色',
+            key: 'roleName',
+            // width:700,
+            align: 'center'
+          },
+          {
+            title: '添加时间',
+            key: 'addtime',
+            // width:700,
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.timeStamp(row.addtime / 1000)),
+              ]);
+            }
+          },
+          {
+            title: '操作',
+            key: 'action',
+            width: 200,
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('Button', {
+                  props: {
+                    type: 'primary',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.modifyPwd(params.row)
+                    }
+                  }
+                }, '更改密码'),
+                h('Button', {
+                  props: {
+                    type: 'error',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.deleteUser(params.row)
+                    }
+                  }
+                }, '删除'),
+                h('Button', {
+                  props: {
+                    type: 'warning',
+                    size: 'small'
+                  },
+                  on: {
+                    click: () => {
+                      this.reset(params.row)
+                    }
+                  }
+                }, '重置')
+              ]);
+            }
+          }
+        ],
+        data: {
+          totals: 0,
+          data: []
+        },
+        rolelist: '',
+        model1: '请选择角色',
+        modify: {
+          username: '',
+          oldPwd: '',
+          newPwd: ''
+        }
+      }
+    },
+    created() {
+      this.userLists();
+    },
+    methods: {
+      reset:function(i){
+        // console.log(i)
+        this.resetusername = i.username
+        this.modal3 = true;
+
+      },
+      resets:function(){
+        // console.log(this.resetusername)
+        this.$http({
+          method: 'post',
+          url: this.url + '/v1/user/resetPassword?username=' +this.resetusername,
+          data: {},
+          success: function (res) {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.$Message.success('重置成功');
+              // _this.userLists();
+            } else if (res.data.code == 4001) {
+              this.$router.push({path:'/'});
+            }else {
+              this.$Message.warning(res.data.msg);
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      pageSize:function(e){
+        this.limit = e;
+        this.page = 1;
+        this.userLists();
+      },
+      modify_ok: function () {
+        if (this.modify.oldPwd == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入旧密码'
+          });
+          return false;
+        }
+        if (this.modify.newPwd == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入新密码'
+          });
+          return false;
+        }
+        if(this.tj){
+          return false;
+        }
+        this.tj=true;
+        this.modals1 = false;
+        let data={
+          'username':this.modify.username,
+          'oldPassword':sha256(this.modify.oldPwd),
+          'password':sha256(this.modify.newPwd)
+        }
+        // data=JSON.stringify(data);
+        this.$http({
+          method: 'post',
+          url: this.url + '/v1/user/updatePassword?username='+data.username+'&oldPassword='+data.oldPassword+'&password='+data.password,
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            this.tj = false;
+            if (res.data.code == 20000) {
+              this.$Message.success('修改密码成功');
+              // this.userLists()
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            }else {
+              this.$Message.warning(res.data.msg);
+            }
+          })
+        })
+      },
+      modify_cancel: function () {
+        this.$Message.info('你放弃修改密码');
+      },
+      modifyPwd: function (da) {
+        // console.log(da)
+        this.modify.username = da.username;
+        this.modify.oldPwd = '';
+        this.modify.newPwd = '';
+        this.modals1 = true;
+      },
+      deleteUser: function (da) {
+        this.deletesId = da.userId;
+        this.modal2 = true;
+      },
+      deletes:function(){
+        let _this = this;
+        this.$http({
+          method: 'put',
+          url: _this.url + '/v1/user/updateUserState/' + this.deletesId + '/0',
+          data: {},
+          success: function (res) {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              _this.$Message.success('删除成功');
+              _this.userLists();
+            } else if (res.data.code == 4001) {
+              // console.log(res.data.message)
+              _this.$router.push({path: '/'});
+            }else {
+              _this.$Message.warning(res.data.msg);
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      checkName: function () {
+        let _this = this;
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/user/findUsernameExists?username=' + this.addUser.username,
+          data: {},
+          success: function (res) {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              if (res.data.data != 0) {
+                _this.$Message.warning('名称重复了，请换一个');
+              }
+            }else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      pageChange: function (e) {
+        this.page = e;
+        this.userLists()
+      },
+      selectChange: function (e) {
+        this.addUser.id = e;
+      },
+      userLists: function () {
+        let _this = this;
+        this.$http({
+          method: 'get',
+          url: _this.url + '/v1/user/findUserList?page=' + this.page + '&limit='+this.limit+'&username='+this.username+'&name='+this.name,
+          data: {},
+          success: ((res) => {
+            if (res.data.code == 20000) {
+              this.data.data = res.data.data;
+              this.data.totals = res.data.count;
+            } else if(res.data.code == 20003){
+              this.data.totals = 0;
+              this.data.data = [];
+            }else {
+              this.$Message.warning(res.data.msg);
+            }
+          })
+        })
+      },
+      roleName: function () {
+        var _this = this;
+        this.$http({
+          method: 'get',
+          url: _this.url + '/v1/role/findRoleList?page=1&limit=50&roleName&roleCode',
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.rolelist = res.data.data;
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          })
+        })
+      },
+      ok() {
+        // console.log(this.addUser)
+        // this.modal1 = true;
+        if (this.addUser.username == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入名称'
+          });
+          return false;
+        }
+        if (this.addUser.password == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入密码'
+          });
+          return false;
+        }
+        if (this.addUser.name == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择昵称'
+          });
+          return false;
+        }
+        if (this.addUser.id == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择角色'
+          });
+          return false;
+        }
+        if(this.tjs){
+          return false;
+        }
+        this.tjs=true;
+        this.modals = false;
+        let data = {
+          'roleId': this.addUser.id,
+          'username': this.addUser.username,
+          'password': sha256(this.addUser.password),
+          'name': this.addUser.name
+        }
+        this.$http({
+          method: 'post',
+          url: this.url + '/v1/user/saveUser',
+          data: data,
+          success: ((res) => {
+            // console.log(res)
+            this.tjs = false;
+            if (res.data.code == 20000) {
+              this.$Message.success('添加用户成功');
+              this.userLists()
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          })
+        })
+      },
+      cancel() {
+        this.$Message.info('你放弃添加用户了');
+      },
+      modal() {
+        this.roleName()
+        this.addUser.id = '';
+        this.addUser.username = '';
+        this.addUser.password = '';
+        this.addUser.name = '';
+        this.modals = true;
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 40px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 14px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+  .hang {
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+  .ivu-input{
+    width: 100%!important;
+  }
+</style>

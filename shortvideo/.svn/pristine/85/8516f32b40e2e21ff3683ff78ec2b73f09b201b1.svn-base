@@ -1,0 +1,231 @@
+<template>
+  <div class="applist">
+     <div class="hang">
+        <span class="qdName">名称：</span>
+        <Input v-model.trim="name" placeholder="Enter something..." class="qdselect"/>
+        <span class="qdName">类型：</span>
+        <Select v-model.trim="typename" filterable class="qdselect">
+            <Option v-for="item in leix" :value="item.value" :key="item.value" class="qdselect">{{ item.label }}</Option>
+        </Select>
+      </div>
+      <div class="hang">
+        <span class="qdName">包名：</span>
+        <Input v-model.trim="baoming" placeholder="Enter something..." class="qdselect"/>
+        <span class="qdName">URL：</span>
+        <Input v-model.trim="Url" placeholder="Enter something..." class="qdselect"/>
+        <Button type="primary" @click="search">查询</Button>
+      </div>
+    <div class="table">
+      <Table stripe :columns="columns" :data="data"></Table>
+    </div>
+    <div class="pagediv">
+        <Page :total="count" :page-size="limit" show-elevator show-total @on-change="changepage"/>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'applist',
+  data () {
+    return {
+      count:0,
+      name:'',
+      typename:'',
+      leix:[
+             {
+                  value: '0',
+                  label: '主逻辑'
+              },
+              {
+                  value: '1',
+                  label: '任务逻辑'
+              },
+              {
+                  value: '2',
+                  label: 'app逻辑'
+              },
+      ],
+      baoming:'',
+      lj:'',
+      page:1,
+      limit:10,
+      fileName:'',
+      Url:'',
+      type:'',
+      packageName:'',
+      columns: [
+                    {
+                        title: 'ID',
+                        key: 'id',
+                        maxWidth:80,
+                    },
+                    {
+                        title: '名称',
+                        key: 'name',
+                        maxWidth:200,
+                    },
+                    {
+                        title: '版本',
+                        key: 'version',
+                        maxWidth:100,
+                    },
+                    {
+                        title: 'URL',
+                        key: 'url',
+                        
+                    },
+                    {
+                        title: '类型',
+                        key: 'type',
+                        maxWidth:100,
+                    },
+                    {
+                        title: '包名',
+                        key: 'packname',
+                        maxWidth:220,
+                    },
+                    {
+                        title: 'Action',
+                        key: 'action',
+                        maxWidth: 100,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.golation(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                            ]);
+                        }
+                    }
+                ],
+                data: [],
+               
+    }
+  },
+  components: { // 定义组件
+
+  },
+  created:function(){
+    this.list();
+  },
+  methods:{
+    golation:function(params){
+       var id=params.row.id;
+        this.$router.push({path:'/bj_upload',query:{id:id}});
+    },
+    changepage:function(v){
+        this.page=v;
+        this.list();
+    },
+    search:function(){
+        this.page=1;
+        this.list();
+    },
+    list:function(){
+      var _this=this;
+      this.$http({
+              method:'get',
+              url:_this.url+'/v1/appLogical/findAppLogicalFileList?page='+this.page+'&limit='+this.limit+'&fileName='+this.name+'&url='+this.Url+'&type='+this.typename+'&packageName='+this.baoming,
+              data:{},
+              success:function(response){
+                      if(response.data.code==20000){
+                           _this.count=response.data.count;
+                           _this.appdom(response.data.data);
+                      }else{
+                            _this.$Message.warning(response.data.message);
+                        }
+              },
+              error:function(err){
+                  console.log(err);
+              },
+          })
+    },
+    appdom:function(data){
+      (this.data).length=0;
+       if(data.length>0){
+           for(var i=0;i<data.length;i++){
+              var obj={};
+              if(typeof data[i].id!='undefined'){
+                obj.id=data[i].id;
+              }else{
+                obj.id='';
+              }
+              if(typeof data[i].fileName!='undefined'){
+                obj.name=data[i].fileName;
+              }else{
+                obj.name='';
+              }
+              if(typeof data[i].version!='undefined'){
+                obj.version=data[i].version;
+              }else{
+                obj.version='';
+              }
+              if(typeof data[i].url!='undefined'){
+                obj.url=data[i].url;
+              }else{
+                obj.url='';
+              }
+              if(typeof data[i].type!='undefined'){
+                if(data[i].type==0){
+                    obj.type='主逻辑';
+                }else if(data[i].type==1){
+                    obj.type='任务逻辑';
+                }else if(data[i].type==2){
+                    obj.type='app逻辑';
+                }
+              }else{
+                obj.type='';
+              }
+              if(typeof data[i].packageName!='undefined'){
+                obj.packname=data[i].packageName;
+              }else{
+                obj.packname='';
+              }
+              (this.data).push(obj);
+           }
+       }
+    },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.pagediv{
+  margin:30px 0 0 30px;
+}
+.table{
+  margin-top:30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+</style>

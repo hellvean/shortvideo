@@ -1,0 +1,229 @@
+<template>
+  <div class="taskxq">
+    <div class="hang">
+        <span class="qdName">开始时间：</span>
+        <DatePicker type="datetime" placeholder="请输入开始时间" class="start" @on-change="start"></DatePicker>
+        <span class="qdName">结束时间：</span>
+        <DatePicker type="datetime" placeholder="请输入结束时间" class="start" @on-change="endt"></DatePicker>
+    </div>
+    <div class="hang">
+        <span class="qdName">留存天数：</span>
+        <Select v-model.trim="liucuncountselect" filterable class="qdselect">
+            <Option v-for="item in liucuncount" :value="item.value" :key="item.value">{{ item.label }}</Option>
+        </Select>
+        <Button type="primary" class="subtj" @click="subtj">查询</Button>
+    </div>
+     <div class="table">
+          <Table stripe :columns="columns" :data="data"></Table>
+          <div class="pagediv">
+             <Page :total="count" :page-size="limit" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+          </div>
+      </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: 'taskorderxq',
+    data() {
+      return {
+        optsarr:[10,20,30,50,80,100],
+       ID:'',
+       limit:0,
+       count:0,
+       page:1,
+       startTime:'',
+       endTime:'',
+       liucuncountselect:'',
+       liucuncount:[
+            {
+                value:0,
+                label:'新增'
+            },
+            {
+                value:1,
+                label:'次日留存'
+            },
+            {
+                value:2,
+                label:'3日留存'
+            },
+            {
+                value:29,
+                label:'30日留存'
+            },
+            {
+                value:-30,
+                label:'上月留存'
+            },
+            {
+                value:-365,
+                label:'今年留存'
+            },
+       ],
+       columns: [
+                    {
+                        title: '执行时间',
+                        align:'center',
+                        key: 'executionTimeHour',
+                    },
+                    {
+                        title:'总任务数',
+                        align:'center',
+                        key: 'taskNumber'
+                    },
+                    {
+                        title:'已完成任务',
+                        align:'center',
+                        key: 'taskCompleted'
+                    },
+                    {
+                        title:'已下发总数',
+                        align:'center',
+                        key: 'yxfcount'
+                    },
+                    {
+                        title:'留存天数',
+                        align:'center',
+                        key: 'retainDay'
+                    },
+                ],
+        data:[],
+      }
+    },
+    components: { // 定义组件
+
+    },
+    created() {
+      this.limit=(this.optsarr)[2];
+       if(typeof this.$route.params.id!='undefined'){
+          this.ID=this.$route.params.id;
+        }
+        if(this.ID!=''){
+          this.init();
+        }
+    },
+    methods: {
+       start:function(v){
+        this.startTime=v;
+      },
+       endt:function(v){
+        this.endTime=v;
+      },
+      subtj:function(){
+        this.page=1;
+        this.init();
+      },
+      init:function(){
+        this.data=[];
+        var _this=this;
+         this.$http({
+            method:'get',
+            url:this.url+'/v1/taskDetail/findTaskDetailPageList?page='+this.page+'&limit='+this.limit+'&taskId='+this.ID+'&startTime='+this.startTime+'&endTime='+this.endTime+'&retainDay='+this.liucuncountselect,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   _this.count=response.data.count;
+                   _this.dom(response.data.data);
+                }else if(response.data.code==20003){
+                 _this.data=[];
+            }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+      },
+      dom:function(d){
+        var zh_taskNumber=0;
+        var zh_taskCompleted=0;
+         for(var i=0;i<d.length;i++){
+            var obj={};
+            if(typeof d[i].sendTotal!='undefined'){
+                  obj.yxfcount=d[i].sendTotal;
+            }else{
+                  obj.yxfcount=0;
+            }
+            if(typeof d[i].executionTimeHour!='undefined'){
+                obj.executionTimeHour=d[i].executionTimeHour;
+            }else{
+                obj.executionTimeHour='';
+            }
+            if(typeof d[i].taskNumber!='undefined'){
+                obj.taskNumber=d[i].taskNumber;
+                zh_taskNumber+=d[i].taskNumber*1
+            }else{
+                obj.taskNumber='';
+            }
+            if(typeof d[i].taskCompleted!='undefined'){
+                obj.taskCompleted=d[i].taskCompleted;
+                zh_taskCompleted+=d[i].taskCompleted*1;
+            }else{
+                obj.taskCompleted='';
+            }
+            if(typeof d[i].retainDay!='undefined'){
+              if(d[i].retainDay==1){
+                obj.retainDay='次日留存';
+              }else if(d[i].retainDay==2){
+                obj.retainDay='3日留存';
+              }else if(d[i].retainDay==29){
+                obj.retainDay='30日留存';
+              }else if(d[i].retainDay==-30){
+                obj.retainDay='上月留存';
+              }else if(d[i].retainDay==-365){
+                obj.retainDay='今年留存';
+              }else{
+                obj.retainDay='新增';
+              }
+                
+            }else{
+                obj.retainDay='';
+            }
+           (this.data).push(obj); 
+         }
+         (this.data).push({executionTimeHour:'总和',taskNumber:zh_taskNumber,taskCompleted:zh_taskCompleted,retainDay:'-'});
+      },
+      pagesizechange:function(v){
+        this.limit=v;
+        this.page=1;
+        this.init();
+      },
+      changepage:function(v){
+        this.page=v;
+        this.init();
+      }
+    },
+    computed: {},
+  }
+</script>
+<style scoped lang='less'>
+ .taskxq{
+   padding: 10px;
+ }
+ .pagediv{
+   margin-top:30px;
+ }
+ .table{
+   margin-top:30px;
+ }
+ .hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+</style>

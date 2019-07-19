@@ -1,0 +1,700 @@
+<template>
+  <div class="Alipay">
+    <Modal
+      v-model="modal1"
+      :mask-closable='false'
+      title="添加"
+      @on-ok=""
+      >
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            设备ID：
+          </span>
+          <Input placeholder="请输入设备ID" style="width: auto" v-model.trim="DeviceId"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            账户：
+          </span>
+          <Input placeholder="请输入账户" style="width: auto" v-model.trim="Zh"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            用户名：
+          </span>
+          <Input placeholder="请输入用户名" style="width: auto" v-model.trim="Name"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            银行卡号：
+          </span>
+          <Input placeholder="请输入银行卡号" style="width: auto" v-model.trim="Card"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            银行卡-手机号：
+          </span>
+          <Input placeholder="请输入银行卡号" style="width: auto" v-model.trim="Cardphone"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            登录手机号：
+          </span>
+          <Input placeholder="请输入登录手机号" style="width: auto" v-model.trim="Loginphone"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            归属地：
+          </span>
+          <Input placeholder="请输入归属地址" style="width: auto" v-model.trim="Gsaddress"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            账户类型：
+          </span>
+          <Input placeholder="请输入账户类型" style="width: auto" v-model.trim="Zhtype"/>
+        </div>
+        <div class="task-cz" style="display:none;">
+          <span class="task-cz-name">
+            使用状态：
+          </span>
+           <Select v-model="Userstate" style="width:162px;">
+              <Option v-for="item in statearr" :value="item.value" :key="item.value">{{ item.label }}</Option>
+          </Select>
+        </div>
+      </div>
+        <div slot="footer">
+        <Button type="text" size="large"  @click="cancel">取消</Button>
+        <Button type="primary" size="large"  @click="okjs">确定</Button>
+      </div>
+    </Modal>
+
+    <Modal
+      v-model="cz_modal1"
+      :mask-closable='false'
+      title="充值"
+      @on-ok=""
+      >
+      <div class="table-task">
+ 
+      
+        <div class="task-cz">
+          <span class="task-cz-name">
+            充值金额：
+          </span>
+          <Input placeholder="请输入充值金额" style="width: auto" v-model.trim="cz_money"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            备注：
+          </span>
+          <Input placeholder="请输入备注" style="width: auto" v-model.trim="bz_txt"/>
+        </div>
+      </div>
+        <div slot="footer">
+        <Button type="text" size="large"  @click="cz_cancel">取消</Button>
+        <Button type="primary" size="large"  @click="cz_okjs">确定</Button>
+      </div>
+    </Modal>
+
+        <div class="tabs-top">
+        <div class="tabs-top-name">
+          支付宝
+        </div>
+        <div class="tabs-top-addTask">
+          <Button type="info" @click="addjs">添加</Button>
+        </div>
+      </div>
+  
+
+    <div class="hang">
+        <span class="qdName">账户：</span>
+        <Input v-model="zh" placeholder="请输入账户" class="qdselect" />
+        <span class="qdName">用户名：</span>
+        <Input v-model="name" placeholder="请输入用户名" class="qdselect" />
+    </div>
+    <div class="hang">
+        <span class="qdName">设备ID：</span>
+        <Input v-model="sb" placeholder="请输入设备ID" class="qdselect" />
+        <Button type="primary" class="subtj" @click="subtj">查询</Button>
+    </div>
+    <div class="table">
+      <Table stripe :columns="columns" :data="data"></Table>
+    </div>
+    <div class="pagediv">
+        <Page :total="zongcount" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'Alipay',
+  data () {
+    return {
+      cz_modal1:false,
+      cz_money:0,
+      bz_txt:'',
+      chongzhiId:'',
+      updataId:'',
+      zongcount:0,
+      optsarr:[10,20,30,50,80,100],
+      limit:0,
+      page:1,
+      zh:'',
+      name:'',
+      sb:'',
+      DeviceId:'',
+      Zh:'',
+      Name:'',
+      Card:'',
+      Cardphone:'',
+      Loginphone:'',
+      Gsaddress:'',
+      Zhtype:'',
+      Userstate:'1',
+      modal1:false,
+      statearr:[
+         {
+              value: '1',
+              label: '使用中'
+          },
+          {
+              value: '0',
+              label: '未使用'
+          },
+      ],
+      columns: [
+                    {
+                        title: '设备ID',
+                        align:'center',
+                        width:100,
+                        key: 'deviceId'
+                    },
+                    {
+                        title: '账户',
+                        align:'center',
+                        key: 'account'
+                    },
+                    {
+                        title: '用户名',
+                        align:'center',
+                        key: 'username'
+                    },
+                    {
+                        title: '银行卡号',
+                        align:'center',
+                        key: 'bankCard'
+                    },
+                    {
+                        title: '余额',
+                        align:'center',
+                        key: 'balance'
+                    },
+                    {
+                        title: '银行卡-手机号',
+                        align:'center',
+                        key: 'bankCardMobile'
+                    },
+                    {
+                        title: '登录手机号',
+                        align:'center',
+                        key: 'loginMobile'
+                    },
+                    {
+                        title: '归属地址',
+                        align:'center',
+                        key: 'loginMobileLocation'
+                    },
+                    {
+                        title: '账户类型',
+                        align:'center',
+                        key: 'accountType'
+                    },
+                    {
+                        title: '使用状态',
+                        align:'center',
+                        key: 'usedState'
+                    },
+                     {
+                        title: '操作',
+                        key: 'key15',
+                        width: 220,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.remove(params)
+                                        }
+                                    }
+                                }, '设置状态'),
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.bianji(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                                h('Button', {
+                                    props: {
+                                        type: 'error',
+                                        size: 'small'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.chognzhi(params)
+                                        }
+                                    }
+                                }, '充值')
+                            ]);
+                        }
+                    }
+                ],
+          data:[],
+    }
+  },
+  created:function(){
+    this.limit=(this.optsarr)[0];
+     this.listdom();
+  },
+  methods:{
+   changepage:function(v){
+     this.page=v;
+     this.listdom();
+   },
+   pagesizechange:function(v){
+     this.limit=v;
+     this.page=1;
+     this.listdom();
+   },
+   chognzhi:function(params){
+     this.chongzhiId=params.row.id;
+     this.cz_modal1=true;
+   },
+   cz_cancel:function(){
+     this.cz_modal1=false;
+     this.cz_money=0;
+     this.bz_txt='';
+   },
+   cz_okjs:function(){
+     var _this=this;
+     var three = /^-?\d+(\.\d{0,3})?$/; 
+     if(!three.test(this.cz_money)){
+       this.$Message.warning('请输入正确的金额');
+       return false
+     }else{
+          this.$http({
+            method:'post',
+            url:_this.url+'/v1/alipayAccount/updateBalance/'+_this.chongzhiId,
+           
+            data:'rechargeAmount='+_this.cz_money*1+'&remark='+_this.bz_txt,
+            success:function(response){
+                    if(response.data.code==20000){
+                  _this.$Message.success('充值成功!');
+                  _this.listdom();
+                  _this.cz_modal1=false;
+                  _this.cz_money=0;
+                  _this.bz_txt='';
+                    }else if(response.data.code==4001){
+                        _this.$router.push({path:'/login'});
+                    }else{
+                        _this.$Message.warning(response.data.msg);
+                      }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+     }
+     
+   },
+   remove:function(params){
+     var _this=this;
+     var id=params.row.id;
+     var state=1;
+     if(params.row.usedStatenum==0){
+          state=1;
+     }else{
+          state=0;
+     }
+     this.$http({
+         method:'put',
+         url:_this.url+'/v1/alipayAccount/updateUseState/'+id+'/'+state,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+               _this.$Message.success('状态修改成功!');
+               _this.listdom();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+   bianji:function(params){
+     var _this=this;
+     var id=params.row.id;
+     this.$http({
+         method:'get',
+         url:_this.url+'/v1/alipayAccount/findAlipayAccount/'+id,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                    _this.DeviceId=response.data.data.deviceId;
+                    _this.Zh=response.data.data.account;
+                    _this.Name=response.data.data.username;
+                    _this.Card=response.data.data.bankCard;
+                    _this.Cardphone=response.data.data.bankCardMobile;
+                    _this.Loginphone=response.data.data.loginMobile;
+                    _this.Gsaddress=response.data.data.loginMobileLocation;
+                    _this.Zhtype=response.data.data.accountType;
+                    _this.Userstate=response.data.data.usedState+'';
+                    _this.updataId=id;
+                    _this.modal1=true;
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+   addjs:function(){
+     this.updataId='';
+     this.DeviceId='';
+     this.Zh='';
+     this.Name='';
+     this.Card='';
+     this.Cardphone='';
+     this.Loginphone='';
+     this.Gsaddress='';
+     this.Zhtype='';
+     this.modal1=true;
+   },
+   subtj:function(){
+     this.listdom();
+   },
+   cancel:function(){
+     this.modal1=false;
+   },
+   okjs:function(){
+     var _this=this;
+     if(this.Zh==''){
+       this.$Message.warning('请输入账户!');
+       return false;
+     }
+     if(this.Name==''){
+       this.$Message.warning('请输入用户名!');
+       return false;
+     }
+     if(this.updataId==''){
+     this.$http({
+         method:'post',
+         url:_this.url+'/v1/alipayAccount/saveAlipayAccount',
+         data:{
+            "deviceId":_this.DeviceId,
+            "account":_this.Zh,
+            "username":_this.Name,
+            "bankCard":_this.Card,
+            "bankCardMobile":_this.Cardphone,
+            "loginMobile":_this.Loginphone,
+            "loginMobileLocation":_this.Gsaddress,
+            "accountType":_this.Zhtype,
+            "usedState":_this.Userstate
+         },
+         success:function(response){
+                if(response.data.code==20000){
+                 _this.$Message.success('保存成功!');
+                 _this.page=1;
+                 _this.listdom();
+                 _this.modal1=false;
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+     }else{
+       this.$http({
+         method:'put',
+         url:_this.url+'/v1/alipayAccount/updateAlipayAccount/'+this.updataId,
+         data:{
+            "deviceId":_this.DeviceId,
+            "account":_this.Zh,
+            "username":_this.Name,
+            "bankCard":_this.Card,
+            "bankCardMobile":_this.Cardphone,
+            "loginMobile":_this.Loginphone,
+            "loginMobileLocation":_this.Gsaddress,
+            "accountType":_this.Zhtype,
+            "usedState":_this.Userstate
+         },
+         success:function(response){
+                if(response.data.code==20000){
+                 _this.$Message.success('修改成功!');
+                 _this.page=1;
+                 _this.listdom();
+                 _this.modal1=false;
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+     }
+     
+   },
+   listdom:function(){
+      this.data=[];
+      var _this=this;
+      this.$http({
+         method:'get',
+         url:_this.url+'/v1/alipayAccount/findAlipayAccountList?page='+_this.page+'&limit='+_this.limit+'&account='+_this.zh+'&username='+_this.name+'&deviceId='+_this.sb,
+         data:{},
+         success:function(response){
+                if(response.data.code==20000){
+                  _this.zongcount=response.data.count;
+                  _this.dom(response.data.data);
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                  }
+         },
+         error:function(err){
+            console.log(err);
+         },
+     })
+   },
+   dom:function(d){
+      if(d.length>0){
+         for(var i=0;i<d.length;i++){
+             var obj={};
+             //账户
+             if(typeof d[i].account!='undefined'){
+                   obj.account=d[i].account;
+             }else{
+                   obj.account='';
+             }
+             //账户类型
+             if(typeof d[i].accountType!='undefined'){
+                   obj.accountType=d[i].accountType;
+             }else{
+                   obj.accountType='';
+             }
+             //银行卡号
+             if(typeof d[i].bankCard!='undefined'){
+                   obj.bankCard=d[i].bankCard;
+             }else{
+                   obj.bankCard='';
+             }
+             //银行卡-手机号
+             if(typeof d[i].bankCardMobile!='undefined'){
+                   obj.bankCardMobile=d[i].bankCardMobile;
+             }else{
+                   obj.bankCardMobile='';
+             }
+             //设备ID
+             if(typeof d[i].deviceId!='undefined'){
+                   obj.deviceId=d[i].deviceId;
+             }else{
+                   obj.deviceId='';
+             }
+             if(typeof d[i].id!='undefined'){
+                   obj.id=d[i].id;
+             }else{
+                   obj.id='';
+             }
+             //登录手机号
+             if(typeof d[i].loginMobile!='undefined'){
+                  obj.loginMobile=d[i].loginMobile;
+             }else{
+                  obj.loginMobile='';
+             }
+             //归属地址
+             if(typeof d[i].loginMobileLocation!='undefined'){
+                  obj.loginMobileLocation=d[i].loginMobileLocation;
+             }else{
+                  obj.loginMobileLocation='';
+             }
+             //余额
+            if(typeof d[i].balance!='undefined'){
+                  obj.balance=d[i].balance;
+             }else{
+                  obj.balance=0;
+             }
+             //使用状态
+             if(typeof d[i].usedState!='undefined'){
+               obj.usedStatenum=d[i].usedState;
+               if(d[i].usedState==1){
+                  obj.usedState='使用中';
+               }else{
+                  obj.usedState='未使用';
+               }
+                  
+             }else{
+                  obj.usedStatenum='';
+                  obj.usedState='';
+             }
+             //用户名
+             if(typeof d[i].username!='undefined'){
+                  obj.username=d[i].username;
+             }else{
+                  obj.username='';
+             }
+              (this.data).push(obj);
+         }
+      }
+   },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.addjs{
+  margin:30px 0 0 30px;
+}
+.table{
+  margin-top:30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.subtj{
+  display:block;
+  float:left;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+  .table-task{
+    .task-cz{
+      margin-bottom: 8px;
+      .task-cz-name{
+        width: 150px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+.yingying{
+  position:fixed;
+  left:0;
+  top:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,.5);
+  z-index:3;
+}
+.openthree{
+  background:#ffffff;
+  position:fixed;
+  left:50%;
+  top:50%;
+  z-index:5;
+  height:450px;
+  width:400px;
+  padding:30px 30px 70px 30px;
+  margin-top:-225px;
+  margin-left:-200px;
+  .threeover{
+  height:350px;
+  width:340px;
+ overflow:auto;
+  }
+}
+.mdclose{
+  position:absolute;
+  right:10px;
+  top:10px;
+  font-size:24px;
+  cursor: pointer;
+}
+.button{
+  width:400px;
+  height:40px;
+  position:absolute;
+  left:0;
+  bottom:0;
+  background: #ffffff!important;
+  border-top:solid 1px #dddddd;
+  border-bottom:none;
+.qdthree{
+  float:right;
+  margin-right:10px;
+  margin-top:2px;
+}
+.qxthree{
+  float:right;
+  margin-right:10px;
+  margin-top:2px;
+}
+}
+.Alipay{
+  padding:10px;
+}
+  .tabs-top {
+      width: 100%;
+      height: 50px;
+      border-bottom:solid 1px #cccccc;
+      line-height:40px;
+      padding-bottom:10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+</style>

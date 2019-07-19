@@ -1,0 +1,689 @@
+<template>
+  <div class="applist">
+    <Modal
+        title="提示"
+        v-model="remove_modal" 
+         @on-ok="remove_ok"
+        :mask-closable="false">
+        <p>确定删除吗</p>
+    </Modal>
+     <div class="tabs-top">
+        <div class="tabs-top-name">
+          逻辑文件管理
+        </div>
+        <div class="tabs-top-addTask">
+          <Button type="info" @click="sc">添加文件</Button>
+        </div>
+      </div>
+      <Modal
+      :mask-closable=false
+      v-model="modal_adddy"
+      title="上传"
+      @on-ok="save"
+      >
+      <div class="table-task">
+   <div class="upload">
+          <div class="task-cz">
+            <span class="task-cz-name">包名：</span>
+            <Input v-model.trim="d_packageName" placeholder="请输入包名" class="task-cz-value"/>
+          </div>
+          <div class="task-cz">
+            <span class="task-cz-name">版本：</span>
+            <Input v-model.trim="d_version" placeholder="请输入版本" class="task-cz-value"/>
+           </div>
+           <div class="task-cz">
+            <span class="task-cz-name">链接：</span>
+            <Input v-model.trim="d_Url" placeholder="请输入链接" class="task-cz-value"/>
+           </div>
+          <div class="task-cz">
+            <span class="task-cz-name">类型：</span>
+            <Select v-model.trim="d_type" filterable class="task-cz-value">
+              <Option v-for="item in d_leix" :value="item.value" :key="item.value">{{ item.label }}</Option>
+            </Select>
+          </div>
+          <div class="task-cz">
+            <span class="task-cz-name">渠道号：</span>
+            <Input v-model.trim="d_appChannel" placeholder="请输入渠道号" class="task-cz-value"/>
+          </div>
+          <div class="task-cz">
+            <span class="task-cz-name">入口类：</span>
+            <Input v-model.trim="d_entryClass" placeholder="请输入入口类" class="task-cz-value"/>
+          </div>
+          <div class="task-cz">
+             <Checkbox v-model="d_single" class="checksingle">是否框架模块</Checkbox>
+          </div>
+          <div class="Upload">
+            <div v-show="d_jcshow">
+            <Upload
+              :format="['jar','apk']"
+              :headers='d_headers'
+              :on-success="jc_handSuccess"
+              :on-error="jc_handError"
+              :on-preview="jc_handPreview"
+              :on-format-error="jc_handFormat"
+              :action="d_jc_action">
+              <Button icon="ios-cloud-upload-outline" type="primary">检测文件</Button>
+          </Upload>
+          </div>
+          <div v-show="d_uploadshow">
+            <Upload
+              :format="['jar','apk']"
+              :headers='d_headers'
+              :on-success="handSuccess"
+              :on-error="handError"
+              :on-preview="handPreview"
+              :on-format-error="handFormat"
+              :action="d_action">
+              <Button icon="ios-cloud-upload-outline" type="primary">上传文件</Button>
+          </Upload>
+          </div>
+        </div>
+       
+  </div>
+      
+      </div> 
+  
+        
+    </Modal>
+
+     <div class="hang">
+        <span class="qdName">名称：</span>
+        <Input v-model.trim="name" placeholder="请输入名称" class="qdselect"/>
+        <span class="qdName">类型：</span>
+        <Select v-model.trim="typename" filterable class="qdselect">
+            <Option v-for="item in leix" :value="item.value" :key="item.value" class="qdselect">{{ item.label }}</Option>
+        </Select>
+      </div>
+      <div class="hang">
+        <span class="qdName">包名：</span>
+        <Input v-model.trim="baoming" placeholder="请输入包名" class="qdselect"/>
+        <span class="qdName">链接：</span>
+        <Input v-model.trim="Url" placeholder="请输入链接" class="qdselect"/>
+        <Button type="primary" @click="search">查询</Button>
+      </div>
+    <div class="table">
+      <Table stripe :columns="columns" :data="data"></Table>
+    </div>
+    <div class="pagediv">
+        <Page :total="count" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-page-size-change="pagesizechange" @on-change="changepage"/>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'applist',
+  data () {
+    return {
+       optsarr:[10,20,30,50,80,100],
+       delete_ID:'',
+       d_single:false,
+       d_ID:'',
+       d_leix:[
+             {
+                  value: '0',
+                  label: '主逻辑'
+              },
+              {
+                  value: '1',
+                  label: '任务逻辑'
+              },
+              {
+                  value: '2',
+                  label: 'app逻辑'
+              },
+      ],
+      d_jcshow:true,
+      d_uploadshow:false,
+      d_jc_action:this.url+'/v1/appLogical/findApkInfo',
+      d_action:this.url+'/v1/file/upload',
+      d_headers:{'token': sessionStorage.getItem('HT_token')},
+      d_type:'1',
+      d_version:'',
+      d_Url:'',
+      d_packageName:'',
+      d_appChannel:'',
+      d_entryClass:'',
+      d_isXposedModule:0,
+
+
+
+      modal_adddy:false,
+      remove_modal:false,
+      count:0,
+      name:'',
+      typename:'',
+      leix:[
+             {
+                  value: '0',
+                  label: '主逻辑'
+              },
+              {
+                  value: '1',
+                  label: '任务逻辑'
+              },
+              {
+                  value: '2',
+                  label: 'app逻辑'
+              },
+      ],
+      baoming:'',
+      lj:'',
+      page:1,
+      limit:0,
+      fileName:'',
+      Url:'',
+      type:'',
+      packageName:'',
+      columns: [
+                    {
+                        title: 'ID',
+                        key: 'id',
+                        maxWidth:80,
+                    },
+                    {
+                        title: '名称',
+                        key: 'name',
+                        maxWidth:200,
+                    },
+                    {
+                        title: '版本',
+                        key: 'version',
+                        maxWidth:100,
+                    },
+                    {
+                        title: '链接',
+                        key: 'url',
+                        
+                    },
+                    {
+                        title: '类型',
+                        key: 'type',
+                        maxWidth:100,
+                    },
+                    {
+                        title: '包名',
+                        key: 'packname',
+                        maxWidth:220,
+                    },
+                    {
+                        title: '操作',
+                        key: 'action',
+                        maxWidth: 260,
+                        align: 'right',
+                        render: (h, params) => {
+                            if(params.row.typeId==0){
+                             return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.sfky(params)
+                                        }
+                                    }
+                                }, params.row.mainUseStateval),
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.golation(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.REMOVE(params)
+                                        }
+                                    }
+                                }, '删除'),
+                            ]);
+                            }else{
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'primary',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.golation(params)
+                                        }
+                                    }
+                                }, '编辑'),
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.REMOVE(params)
+                                        }
+                                    }
+                                }, '删除'),
+                            ]);
+                            }
+                           
+                        }
+                    }
+                ],
+                data: [],
+               
+    }
+  },
+  components: { // 定义组件
+
+  },
+
+
+    created:function(){
+        this.limit=(this.optsarr)[0];
+      this.list();
+  },
+
+  methods:{
+    sfky:function(params){
+        var num='';
+        if(params.row.mainUseState==0){
+                num=1;
+        }else{
+            num=0;
+        }
+        var _this=this;
+              this.$http({
+              method:'put',
+              url:_this.url+'/v1/appLogical/updateMainLogicalUseState/'+params.row.id+'/'+num,
+              data:{},
+              success:function(response){
+                      if(response.data.code==20000){
+                        _this.$Message.success('修改成功!');
+                        _this.page=1;
+                        _this.list();
+                      }else{
+                            _this.$Message.warning(response.data.msg);
+                        }
+              },
+              error:function(err){
+                  console.log(err);
+              },
+          })
+        
+    },
+    REMOVE:function(params){
+        this.delete_ID=params.row.id;
+        this.remove_modal=true;
+    },
+    remove_ok:function(){
+          var _this=this;
+          this.$http({
+              method:'put',
+              url:_this.url+'/v1/appLogical/updateAppLogicalState/'+this.delete_ID+'/0',
+              data:{},
+              success:function(response){
+                      if(response.data.code==20000){
+                        _this.$Message.success('删除成功!');
+                        _this.page=1;
+                        _this.list();
+                      }else{
+                            _this.$Message.warning(response.data.msg);
+                        }
+              },
+              error:function(err){
+                  console.log(err);
+              },
+          })
+    },
+    sc:function(){
+        this.modal_adddy=true;
+    },
+    init:function(){
+      var _this=this;
+      this.$http({
+              method:'get',
+              url:_this.url+'/v1/appLogical/findAppLogical/'+this.d_ID,
+              data:{},
+              success:function(response){
+                      if(response.data.code==20000){
+                         _this.dom(response.data.data);
+                      }else{
+                            _this.$Message.warning(response.data.msg);
+                        }
+              },
+              error:function(err){
+                  console.log(err);
+              },
+          })
+    },
+     dom:function(d){
+       if(typeof d.isXposedModule!=undefined){
+           if(d.isXposedModule*1==1){
+                this.d_single=true;
+           }else{
+                this.d_single=false;
+           }
+          
+       }
+       if(typeof d.packageName!='undefined'){
+          this.d_packageName=d.packageName;
+       }
+       if(typeof d.version!='undefined'){
+          this.d_version=d.version;
+       }
+       if(typeof d.url!='undefined'){
+          this.d_Url=d.url;
+       }
+       if(typeof d.type!='undefined'){
+          this.d_type=d.type+'';
+       }
+       
+       if(typeof d.appChannel!='undefined'){
+          this.d_appChannel=d.appChannel;
+       }
+       if(typeof d.entryClass!='undefined'){
+          this.d_entryClass=d.entryClass;
+       }
+     },
+     jc_handFormat:function(file, fileList){
+      this.$Message.warning('请选择jar或apk文件');
+    },
+     jc_handSuccess:function(response, file, fileList){
+      this.$Message.success('检测正确');
+      this.d_uploadshow=true;
+      this.d_jcshow=false;
+      this.d_packageName=response.data.packageName;
+      this.d_version=response.data.version
+     },
+     jc_handPreview:function(file){
+        console.log(file);
+     },
+     jc_handError:function(file,error,fileList){
+      this.$Message.warning('上传失败');
+     },
+
+    handFormat:function(file, fileList){
+      this.$Message.warning('请选择jar或apk文件');
+    },
+     handSuccess:function(response, file, fileList){
+       this.$Message.success('上传成功');
+       this.d_uploadshow=false;
+       this.d_jcshow=true;
+       this.d_Url=response.data;
+     },
+     handPreview:function(file){
+        console.log(file);
+     },
+     handError:function(file,error,fileList){
+      this.$Message.warning('上传失败');
+     },
+     save:function(){
+       if(this.d_single){
+         this.d_isXposedModule=1;
+       }else{
+         this.d_isXposedModule=0;
+       }
+       var _this=this;
+       if(this.d_ID==''){
+            if(this.d_type==0 || this.d_type==1){
+                if(this.d_entryClass==''){
+                    this.$Message.warning('请填入口类');
+                    return false;
+                }
+            }
+            if(this.d_version=='' || this.d_url=='' || this.d_type=='' || this.d_packageName==''){
+            this.$Message.warning('请填写完整');
+                }else{
+                this.$http({
+                        method:'post',
+                        url:_this.url+'/v1/appLogical/saveAppLogicalFile',
+                        data:{
+                                "version":this.d_version,
+                                'url':this.d_Url,
+                                'type':this.d_type,
+                                'packageName':this.d_packageName,
+                                'appChannel':this.d_appChannel,
+                                'entryClass':this.d_entryClass,
+                                'isXposedModule':this.d_isXposedModule
+                        },
+                      
+                        success:function(response){
+                                if(response.data.code==20000){
+                                      _this.$Message.success('保存成功');
+                                      _this.search();
+                                }else{
+                                      _this.$Message.warning(response.data.msg);
+                                  }
+                        },
+                        error:function(err){
+                            console.log(err);
+                        },
+                    })
+                }
+       }else{
+         if(this.d_version=='' || this.d_url=='' || this.d_type=='' || this.d_packageName=='' || this.d_appChannel=='' || this.d_entryClass==''){
+            this.$Message.warning('请填写完整');
+                }else{
+                this.$http({
+                        method:'PUT',
+                        url:_this.url+'/v1/appLogical/updateAppLogical/'+_this.d_ID,
+                        data:{
+                                "version":this.d_version,
+                                'url':this.d_Url,
+                                'type':this.d_type,
+                                'packageName':this.d_packageName,
+                                'appChannel':this.d_appChannel,
+                                'entryClass':this.d_entryClass,
+                                'isXposedModule':this.d_isXposedModule
+                        },
+                      
+                        success:function(response){
+                                if(response.data.code==20000){
+                                      _this.$Message.success('修改成功');
+                                }else{
+                                      _this.$Message.warning(response.data.msg);
+                                  }
+                        },
+                        error:function(err){
+                            console.log(err);
+                        },
+                    })
+                }
+       }
+      
+      
+     },
+
+
+    golation:function(params){
+       var id=params.row.id;
+      //  this.$router.push({path:'/bj_upload',query:{id:id}});
+       this.d_ID=id;
+       this.init();
+       this.modal_adddy=true;
+    },
+    changepage:function(v){
+        this.page=v;
+        this.list();
+    },
+    pagesizechange:function(v){
+        this.limit=v;
+        this.page=1;
+        this.list();
+      },
+    search:function(){
+        this.page=1;
+        this.list();
+    },
+    list:function(){
+      var _this=this;
+      this.$http({
+              method:'get',
+              url:_this.url+'/v1/appLogical/findAppLogicalFileList?page='+this.page+'&limit='+this.limit+'&fileName='+this.name+'&url='+this.Url+'&type='+this.typename+'&packageName='+this.baoming,
+              data:{},
+              success:function(response){
+                      if(response.data.code==20000){
+                           _this.count=response.data.count;
+                           _this.appdom(response.data.data);
+                      }else if(response.data.code==20003){
+                                (_this.data)=[];
+                      }else{
+                            _this.$Message.warning(response.data.msg);
+                        }
+              },
+              error:function(err){
+                  console.log(err);
+              },
+          })
+    },
+    appdom:function(data){
+      (this.data)=[];
+       if(data.length>0){
+           for(var i=0;i<data.length;i++){
+              var obj={};
+              if(typeof data[i].id!='undefined'){
+                obj.id=data[i].id;
+              }else{
+                obj.id='';
+              }
+              if(typeof data[i].fileName!='undefined'){
+                obj.name=data[i].fileName;
+              }else{
+                obj.name='';
+              }
+              if(typeof data[i].version!='undefined'){
+                obj.version=data[i].version;
+              }else{
+                obj.version='';
+              }
+              if(typeof data[i].url!='undefined'){
+                obj.url=data[i].url;
+              }else{
+                obj.url='';
+              }
+              if(typeof data[i].type!='undefined'){
+                  obj.typeId=data[i].type;
+                if(data[i].type==0){
+                    obj.type='主逻辑';
+                }else if(data[i].type==1){
+                    obj.type='任务逻辑';
+                }else if(data[i].type==2){
+                    obj.type='app逻辑';
+                }
+              }else{
+                obj.type='';
+              }
+              if(typeof data[i].mainUseState!='undefined'){
+                  obj.mainUseState=data[i].mainUseState;
+                  if(data[i].mainUseState==0){
+                    obj.mainUseStateval='不可用';
+                  }else{
+                    obj.mainUseStateval='可用';
+                  }
+              }
+              if(typeof data[i].packageName!='undefined'){
+                obj.packname=data[i].packageName;
+              }else{
+                obj.packname='';
+              }
+              (this.data).push(obj);
+           }
+       }
+    },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.pagediv{
+  margin:30px 0 0 30px;
+}
+.table{
+  margin-top:30px;
+}
+.hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.applist{
+    padding:10px;
+}
+.table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      overflow:hidden;
+      line-height:32px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: block;
+        float:left;
+        margin-right:15px;
+      }
+      .task-cz-value{
+          float:left;
+          display:block;
+          text-align:left;
+          width:300px;
+      }
+    }
+  }
+  .checksingle{
+  margin-right:30px;
+  margin-left:60px;
+}
+  .tabs-top {
+      width: 100%;
+      height: 50px;
+      border-bottom:solid 1px #cccccc;
+      line-height:40px;
+      padding-bottom:10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+</style>

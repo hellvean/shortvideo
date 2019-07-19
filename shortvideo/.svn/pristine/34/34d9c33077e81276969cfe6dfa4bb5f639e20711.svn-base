@@ -1,0 +1,467 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        列表管理
+      </div>
+    </div>
+    <div style="height: 100%">
+      <div class='tree_left'>
+        <Tree :data="data4" @on-select-change="clickchange" ref="trees"></Tree>
+      </div>
+      <div class="tree_rigth">
+        <div class="table-task" v-bind="addedit[0]">
+          <div class="task-cz">
+            <span class="task-cz-name">
+              名称：
+            </span>
+            <Input prefix="ios-star" placeholder="名称" v-model="addedit.title" @on-blur="checkName"
+                   style="width: 250px"/>
+          </div>
+          <div class="task-cz ksss">
+            <span class="task-cz-name">
+              权限：
+            </span>
+            <Input prefix="ios-star" placeholder="XXX-MANAGE的样式" v-model="addedit.permission" @on-blur="checkCode"
+                   style="width: 250px"/>
+          </div>
+          <div class="task-cz">
+          <span class="task-cz-name">
+            上级菜单：
+          </span>
+            <Select v-model="addedit.parentId" clearable filterable style="width:162px" @on-change="selectChange"
+                    placeholder="为空时时添加主目录">
+              <Option v-for="item in cityList" :value="item.id" :key="item.id">{{ item.title }}</Option>
+            </Select>
+          </div>
+          <!--<div class="task-cz">-->
+          <!--<span class="task-cz-name">-->
+          <!--上级id：-->
+          <!--</span>-->
+          <!--<Input prefix="ios-star" placeholder="parentId" style="width: auto"/>-->
+          <!--</div>-->
+          <div class="task-cz">
+          <span class="task-cz-name">
+            地址：
+          </span>
+            <Input prefix="ios-star" placeholder="url" v-model="addedit.url" style="width: 250px"/>
+          </div>
+          <div class="task-cz">
+          <span class="task-cz-name">
+            等级：
+          </span>
+            <Input prefix="ios-star" placeholder="level" v-model="addedit.level" style="width: 250px"/>
+          </div>
+          <div class="task-cz">
+          <span class="task-cz-name">
+            权重：
+          </span>
+            <Input prefix="ios-star" placeholder="pageOrder" v-model="addedit.pageOrder" style="width: 250px"/>
+          </div>
+          <div class="" style="padding-left: 30%">
+            <Button type="success" @click="adduser">添加</Button>
+            <Button type="warning" @click="edituser">修改</Button>
+            <Button type="error" @click="deleteuser">删除</Button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        menu: '',//侧边栏菜单
+        data4: [],
+        cityList: [],
+        model1: '',
+        addedit: {
+          url: '',
+          title: '',
+          permission: '',
+          url: '',
+          level: '',
+          id: '',
+          parentId: '',
+          pageOrder:''
+        },
+        token: sessionStorage.getItem('HT_token'),
+      }
+    },
+    created() {
+      this.getUserList()
+    },
+    methods: {
+      checkName: function () {
+        let _this = this
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/pageFunction/findPageNameExists?pageName=' + this.addedit.title,
+          data: {},
+          success: function (res) {
+            if (res.data.code == 20000) {
+              if (res.data.data != 0) {
+                _this.$Message.warning('名称重复了，请换一个');
+              }
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      checkCode: function () {
+        let _this = this
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/pageFunction/findPermissionExists?permission=' + this.addedit.permission,
+          data: {},
+          success: function (res) {
+            if (res.data.code == 20000) {
+              if (res.data.data != 0) {
+                _this.$Message.warning('权限重复了，请换一个');
+              }
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      adduser: function () {
+        let data = {
+          'name': this.addedit.title,
+          'permission': this.addedit.permission,
+          'parentId': this.addedit.parentId == 'undefined' ? 0 : this.addedit.parentId,
+          'url': this.addedit.url,
+          'level': this.addedit.level,
+          'pageOrder': this.addedit.pageOrder,
+          'comments': ''
+        }
+        if (this.addedit.title == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入名称'
+          });
+          return false;
+        }
+        if (this.addedit.permission == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入权限'
+          });
+          return false;
+        }
+        if (this.addedit.url == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入地址'
+          });
+          return false;
+        }
+        if (this.addedit.level == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入等级'
+          });
+          return false;
+        }
+        if (this.addedit.pageOrder == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入权重'
+          });
+          return false;
+        }
+        let _this = this;
+        this.$http({
+          method: 'post',
+          url: this.url + '/v1/pageFunction/savePageFunction',
+          data: data,
+          success: function (response) {
+            if (response.data.code == 20000) {
+              _this.$Message.success('添加成功');
+              _this.getUserList()
+            } else {
+              _this.$Message.warning(response.data.msg);
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      edituser: function () {
+        let k = this.addedit.parentId == 'undefined' ? 0 : this.addedit.parentId
+        let datas = {
+          'id': this.addedit.id,
+          'name': this.addedit.title,
+          'permission': this.addedit.permission,
+          'parentId': this.addedit.parentId == 'undefined' ? 0 : this.addedit.parentId,
+          'url': this.addedit.url,
+          'pageOrder': this.addedit.pageOrder,
+          "isleaf": '',
+          'comments': ''
+        }
+        if (this.addedit.title == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入名称'
+          });
+          return false;
+        }
+        if (this.addedit.permission == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入权限'
+          });
+          return false;
+        }
+        if (this.addedit.url == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入地址'
+          });
+          return false;
+        }
+        if (this.addedit.level == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入等级'
+          });
+          return false;
+        }
+        if (this.addedit.pageOrder == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请输入权重'
+          });
+          return false;
+        }
+        // console.log(datas)
+        let _this = this;
+        this.$http({
+          method: 'put',
+          url: this.url + '/v1/pageFunction/updatePageFunction',
+          data: datas,
+          success: function (response) {
+            if (response.data.code == 20000) {
+              _this.$Message.success('修改成功');
+              _this.getUserList()
+            } else {
+              _this.$Message.warning(response.data.msg);
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+        // console.log(this.addedit)
+      },
+      deleteuser: function () {
+        let _this = this;
+        this.$http({
+          method: 'put',
+          url: _this.url + '/v1/pageFunction/updatePageState/' + _this.addedit.id + '/0',
+          data: {},
+          success: function (res) {
+            if (res.data.code == 20000) {
+              _this.$Message.success('删除成功');
+              _this.getUserList()
+            } else {
+              _this.$Message.warning(res.data.msg);
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      getUserList: function () {
+        var _this = this;
+        this.$http({
+          method: 'get',
+          url: _this.url + '/v1/pageFunction/findPageTree',
+          data: {},
+          success: function (response) {
+            if (response.data.code == 20000) {
+              if (response.data.data.children.length > 0) {
+                _this.menu = response.data.data.children;
+                _this.selects();
+              }
+            } else {
+              _this.warning(response.data.message);
+            }
+          },
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      menulist: function (data) {
+        var list = [];
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].parentId == 0) {
+            var obj = data[i];
+            obj.index = "cpa" + i;
+            obj.children = [];
+            list.push(obj);
+          }
+        }
+        this.cityList = list;
+        for (var i = 0; i < data.length; i++) {
+          if (data[i].parentId != 0) {
+            for (var j = 0; j < list.length; j++) {
+              if (data[i].parentId == list[j].id) {
+                data[i].index = list[j].index + '-' + j;
+                (list[j].children).push(data[i]);
+              }
+            }
+          }
+        }
+        this.menu = list;
+        this.selects();
+      },
+      clickchange: function (e) {
+        console.log(e)
+        this.addedit.id = e[0].id;
+        this.addedit.url = e[0].url;
+        this.addedit.title = e[0].title;
+        this.addedit.parentId = e[0].parentId;
+        this.addedit.permission = e[0].permission;
+        this.addedit.level = e[0].level;
+        this.addedit.pageOrder = e[0].pageOrder;
+        this.model1 = '';
+      },
+      selectChange: function (e) {
+        this.addedit.parentId = e;
+      },
+      selects: function () {
+        let da = this.menu;
+        var b = [];
+        for (let i = 0; i < da.length; i++) {
+          let obj = {};
+          obj.expand = 'true';
+          obj.title = da[i].name;
+          obj.id = da[i].id;
+          obj.url = da[i].url;
+          obj.parentId = da[i].parentId;
+          obj.permission = da[i].permission;
+          obj.level = da[i].level;
+          obj.pageOrder = da[i].pageOrder;
+          b.push(obj);
+        }
+        this.cityList = b;
+        for (let i in da) {
+          let a = [];
+          for (let j in da[i].children) {
+            let obj = {};
+            obj.expand = 'true';
+            obj.title = da[i].children[j].name;
+            obj.id = da[i].children[j].id;
+            obj.url = da[i].children[j].url;
+            obj.parentId = da[i].children[j].parentId;
+            obj.permission = da[i].children[j].permission;
+            obj.level = da[i].children[j].level;
+            obj.pageOrder = da[i].children[j].pageOrder;
+            a.push(obj)
+          }
+          b[i].children = a;
+        }
+        this.data4 = b;
+      }
+    },
+  }
+</script>
+
+<style>
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  .tabs-top {
+    width: 100%;
+    height: 40px;
+    border-bottom: 2px solid #cccccc;
+  }
+
+  .tabs-top-name {
+    font-size: 14px;
+    float: left;
+  }
+
+  .ivu-tree ul {
+    font-size: 14px !important;
+    overflow-y: auto;
+  }
+
+  .ivu-tree {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    font-size: 14px;
+  }
+
+  .tree_left {
+    display: inline-block;
+    width: 50%;
+    float: left;
+    height: 100%;
+    border-right: 1px solid #cccccc;
+
+  }
+
+  .tree_rigth {
+    display: inline-block;
+    width: 50%;
+    float: left;
+    height: 100%;
+    padding-top: 100px;
+    /*text-align: center;*/
+  }
+
+  .table-task {
+
+  }
+
+  .task-cz {
+    margin-bottom: 20px;
+  }
+
+  .task-cz-name {
+    width: 30%;
+    /*width: 150px;*/
+    font-size: 14px;
+    text-align: right;
+    display: inline-block;
+  }
+
+  .ivu-input {
+    width: 65%;
+    /*font-size: 18px;*/
+  }
+
+  .ivu-select {
+    width: 70%;
+    font-size: 14px;
+  }
+
+  .buttons-three {
+    text-align: center;
+  }
+
+  button {
+    /*width: 30%;*/
+  }
+
+  .ksss input {
+    text-transform: uppercase;
+  }
+</style>

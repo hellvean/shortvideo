@@ -1,0 +1,2 @@
+var url='http://192.168.1.231:8890';
+module.exports=url;

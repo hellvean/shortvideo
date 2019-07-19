@@ -1,0 +1,281 @@
+<template>
+  <div class="upload">
+          <div class="hang">
+            <span class="qdName">包名：</span>
+            <Input v-model.trim="packageName" placeholder="Enter something..." class="qdselect" readonly/>
+            
+            <span class="qdName">版本：</span>
+            <Input v-model.trim="version" placeholder="Enter something..." class="qdselect" readonly/>
+            <span class="qdName">URL：</span>
+            <Input v-model.trim="Url" placeholder="Enter something..." class="qdselect" readonly/>
+          </div>
+          <div class="hang">
+            <span class="qdName">类型：</span>
+            <Select v-model.trim="type" filterable class="qdselect">
+              <Option v-for="item in leix" :value="item.value" :key="item.value" class="qdselect">{{ item.label }}</Option>
+          </Select>
+            <span class="qdName">渠道号：</span>
+            <Input v-model.trim="appChannel" placeholder="Enter something..." class="qdselect"/>
+            <span class="qdName">入口类：</span>
+            <Input v-model.trim="entryClass" placeholder="Enter something..." class="qdselect"/>
+          </div>
+          <div class="hang">
+             <Checkbox v-model="single" class="checksingle">是否框架模块</Checkbox>
+            <Button type="primary" @click="save" class="save">保存</Button>
+          </div>
+          <div class="Upload">
+            <div v-show="jcshow">
+            <Upload
+              :format="['jar','apk']"
+              :headers='headers'
+              :on-success="jc_handSuccess"
+              :on-error="jc_handError"
+              :on-preview="jc_handPreview"
+              :on-format-error="jc_handFormat"
+              :action="jc_action">
+              <Button icon="ios-cloud-upload-outline" type="primary">检测文件</Button>
+          </Upload>
+          </div>
+          <div v-show="uploadshow">
+            <Upload
+              :format="['jar','apk']"
+              :headers='headers'
+              :on-success="handSuccess"
+              :on-error="handError"
+              :on-preview="handPreview"
+              :on-format-error="handFormat"
+              :action="action">
+              <Button icon="ios-cloud-upload-outline" type="primary">上传文件</Button>
+          </Upload>
+          </div>
+        </div>
+       
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'upload',
+  data () {
+    return {
+      single:false,
+       ID:'',
+       leix:[
+             {
+                  value: '0',
+                  label: '主逻辑'
+              },
+              {
+                  value: '1',
+                  label: '任务逻辑'
+              },
+              {
+                  value: '2',
+                  label: 'app逻辑'
+              },
+      ],
+      jcshow:true,
+      uploadshow:false,
+      jc_action:this.url+'/v1/appLogical/findApkInfo',
+      action:this.url+'/v1/file/upload',
+      headers:{'token': sessionStorage.getItem('HT_token')},
+      type:'',
+      version:'',
+      Url:'',
+      packageName:'',
+      appChannel:'',
+      entryClass:'',
+      isXposedModule:0,
+    }
+  },
+   created:function(){
+     this.type='';
+     this.version='';
+     this.Url='';
+     this.packageName='';
+     this.appChannel='';
+     this.entryClass='';
+     this.isXposedModule=0;
+     this.single=false;
+     if(typeof this.$route.query.id!='undefined'){
+      this.ID=this.$route.query.id;
+     }
+     if(this.ID!=''){
+      this.init();
+     }
+  },
+  methods:{
+    init:function(){
+      var _this=this;
+      this.$http({
+              method:'get',
+              url:_this.url+'/v1/appLogical/findAppLogical/'+this.ID,
+              data:{},
+              success:function(response){
+                      if(response.data.code==20000){
+                         _this.dom(response.data.data);
+                      }else{
+                            _this.$Message.warning(response.data.message);
+                        }
+              },
+              error:function(err){
+                  console.log(err);
+              },
+          })
+    },
+     dom:function(d){
+       if(typeof d.packageName!='undefined'){
+          this.packageName=d.packageName;
+       }
+       if(typeof d.version!='undefined'){
+          this.version=d.version;
+       }
+       if(typeof d.url!='undefined'){
+          this.Url=d.url;
+       }
+       if(typeof d.type!='undefined'){
+          this.type=d.type+'';
+       }
+       
+       if(typeof d.appChannel!='undefined'){
+          this.appChannel=d.appChannel;
+       }
+       if(typeof d.entryClass!='undefined'){
+          this.entryClass=d.entryClass;
+       }
+     },
+     jc_handFormat:function(file, fileList){
+      this.$Message.warning('请选择jar或apk文件');
+    },
+     jc_handSuccess:function(response, file, fileList){
+      this.$Message.success('检测正确');
+      this.uploadshow=true;
+      this.jcshow=false;
+      this.packageName=response.data.packageName;
+      this.version=response.data.version
+     },
+     jc_handPreview:function(file){
+        console.log(file);
+     },
+     jc_handError:function(file,error,fileList){
+      this.$Message.warning('上传失败');
+     },
+
+    handFormat:function(file, fileList){
+      this.$Message.warning('请选择jar或apk文件');
+    },
+     handSuccess:function(response, file, fileList){
+       this.$Message.success('上传成功');
+       this.uploadshow=false;
+       this.jcshow=true;
+       this.Url=response.data;
+     },
+     handPreview:function(file){
+        console.log(file);
+     },
+     handError:function(file,error,fileList){
+      this.$Message.warning('上传失败');
+     },
+     save:function(){
+       if(this.single){
+         this.isXposedModule=1;
+       }else{
+         this.isXposedModule=0;
+       }
+       var _this=this;
+       if(this.ID==''){
+            if(this.version=='' || this.url=='' || this.type=='' || this.packageName=='' || this.appChannel=='' || this.entryClass==''){
+            this.$Message.warning('请填写完整');
+                }else{
+                this.$http({
+                        method:'post',
+                        url:_this.url+'/v1/appLogical/saveAppLogicalFile',
+                        data:{
+                                "version":this.version,
+                                'url':this.Url,
+                                'type':this.type,
+                                'packageName':this.packageName,
+                                'appChannel':this.appChannel,
+                                'entryClass':this.entryClass,
+                                'isXposedModule':this.isXposedModule
+                        },
+                      
+                        success:function(response){
+                                if(response.data.code==20000){
+                                      _this.$Message.success('保存成功');
+                                }else{
+                                      _this.$Message.warning(response.data.message);
+                                  }
+                        },
+                        error:function(err){
+                            console.log(err);
+                        },
+                    })
+                }
+       }else{
+         if(this.version=='' || this.url=='' || this.type=='' || this.packageName=='' || this.appChannel=='' || this.entryClass==''){
+            this.$Message.warning('请填写完整');
+                }else{
+                this.$http({
+                        method:'PUT',
+                        url:_this.url+'/v1/appLogical/updateAppLogical/'+_this.ID,
+                        data:{
+                                "version":this.version,
+                                'url':this.Url,
+                                'type':this.type,
+                                'packageName':this.packageName,
+                                'appChannel':this.appChannel,
+                                'entryClass':this.entryClass,
+                                'isXposedModule':this.isXposedModule
+                        },
+                      
+                        success:function(response){
+                                if(response.data.code==20000){
+                                      _this.$Message.success('修改成功');
+                                }else{
+                                      _this.$Message.warning(response.data.message);
+                                  }
+                        },
+                        error:function(err){
+                            console.log(err);
+                        },
+                    })
+                }
+       }
+      
+      
+     },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+.hang{
+  overflow:hidden;
+  margin-left:30px;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdselect,.start{
+    display:block;
+    float:left;
+    width:200px;
+    margin-right:30px;
+  }
+}
+.Upload{
+  margin:30px 0 0 30px;
+}
+.checksingle{
+  margin-right:30px;
+  margin-left:60px;
+}
+</style>

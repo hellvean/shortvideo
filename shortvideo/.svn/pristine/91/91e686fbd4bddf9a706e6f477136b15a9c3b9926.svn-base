@@ -1,0 +1,379 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        渠道列表
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="modal">添加渠道</Button>
+      </div>
+    </div>
+    <div class="hang">
+      <span class="qdName">渠道名称：</span>
+      <Input v-model="channel" placeholder="请输入渠道名称" class="qdselect"/>
+      <span class="qdName">公司id：</span>
+      <Select v-model="companyId" filterable clearable style="width:200px">
+        <Option v-for="item in companyList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+      </Select>
+      <!--<Input v-model="companyId" placeholder="请输入公司id" class="qdselect"/>-->
+      <Button type="primary" class="subtj" style="margin-left: 30px;" @click="channelList">查询</Button>
+    </div>
+    <Table border stripe :columns="columns" :data="data"></Table>
+    <div class="page">
+      <Page :total="tots" show-elevator show-total show-sizer :page-size="limit" :page-size-opts="sizes" @on-change="pageChange" @on-page-size-change="pageSize"/>
+    </div>
+    <Modal
+      v-model="modal1"
+      :title="tits"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="datas">
+        <div class="task-cz" v-show="company">
+          <span class="task-cz-name">
+            公司名称：
+          </span>
+          <Select v-model="datas.companyId" filterable style="width:200px">
+            <Option v-for="item in companyList" :value="item.id" :key="item.id">{{ item.name }}</Option>
+          </Select>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            渠道名称：
+          </span>
+          <Input prefix="ios-star" placeholder="渠道名称" v-model="datas.channel" style="width: 200px"/>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large"  @click="cancel">取消</Button>
+        <Button type="primary" size="large"  @click="ok">确定</Button>
+      </div>
+    </Modal>
+
+    <Modal
+      title="提示"
+      v-model="modal2"
+      @on-ok="deletes"
+      :styles="{top: '20px'}">
+      <p>你确定要删除吗？</p>
+      <!--<p>Content of dialog</p>-->
+      <!--<p>Content of dialog</p>-->
+    </Modal>
+  </div>
+</template>
+
+<script>
+  export default {
+    name:'channel',
+    data() {
+      return {
+        channel: '',
+        companyId: '',
+        modal1: false,
+        modal2: false,
+        tits: '',
+        sizes:[10,20,30,50,80,100],
+        tots: 0,
+        page: 1,
+        company: false,
+        limit:10,
+        columns: [
+          {
+            title: '渠道id',
+            key: 'id',
+            width: 90,
+            align: 'center'
+          },
+          {
+            title: '公司id',
+            key: 'companyId',
+            align: 'center'
+          },
+          {
+            title: '公司名称',
+            key: 'company',
+            align: 'center'
+          },
+          {
+            title: '渠道名称',
+            key: 'channel',
+            align: 'center'
+          },
+          {
+            title: '状态',
+            key: 'state',
+            align: 'center'
+          },
+          {
+            title: '添加时间',
+            key: 'addtime',
+            align: 'center',
+            render: (h, params) => {
+              const row = params.row;
+              return h('div', [
+                h('span', {}, this.timeStamp(row.addtime / 1000)),
+              ]);
+            }
+          },
+          {
+            title: '操作',
+            key: 'action',
+            // width: 170,
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('Button', {
+                  props: {
+                    type: 'primary',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.edits(params)
+                    }
+                  }
+                }, '编辑'),
+                // h('Button', {
+                //   props: {
+                //     type: 'error',
+                //     size: 'small'
+                //   },
+                //   style: {
+                //     marginRight: '5px'
+                //   },
+                //   on: {
+                //     click: () => {
+                //       this.delete(params)
+                //     }
+                //   }
+                // }, '删除'),
+              ]);
+            }
+          }
+        ],
+        data: [],
+        datas: {
+          companyId: "",
+          company: '',
+          channel: ''
+        },
+        deleteId: '',
+        companyList: '',
+        editId: '',
+      }
+    },
+    created() {
+      this.channelList()
+      this.companylist()
+    },
+    methods: {
+      pageSize:function(e){
+        this.limit = e;
+        this.channelList()
+      },
+      companylist: function () {
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/company/findCompanySel',
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              // this.tots = res.data.count;
+              this.companyList = res.data.data;
+            }
+          })
+        })
+      },
+      delete: function (da) {
+        // console.log(da)
+        this.modal2 = true;
+        this.deleteId = da.row.id;
+        // this.deletes(da)
+      },
+      deletes: function () {
+        // console.log(this.deleteId)
+        this.$http({
+          method: 'put',
+          url: this.url + '/v1/channel/updateChannelState/' + this.deleteId + '/0',
+          data: this.datas,
+          success: ((res) => {
+            if (res.data.code == 20000) {
+              this.$Message.success('删除渠道成功');
+              // this.channelList()
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      pageChange: function (e) {
+        this.page = e;
+        this.channelList();
+      },
+      channelList: function () {
+        this.companyId = ((this.companyId == 'undefined' || this.companyId == undefined) ? '' : this.companyId);
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/channel/findChannelList?page=' + this.page + '&limit='+this.limit+'&companyId=' + this.companyId + '&channel=' + this.channel,
+          data: {},
+          success: ((res) => {
+            // console.log(res);
+            if (res.data.code == 20000) {
+              this.tots = res.data.count;
+              this.data = res.data.data;
+            }else if(res.data.code == 20003){
+              this.tots = 0;
+              this.data = '';
+            }else {
+              this.$Message.warning(res.data.msg);
+            }
+          })
+        })
+      },
+      ok() {
+        if (this.company) {
+          for (let i in this.companyList) {
+            if (this.datas.companyId == this.companyList[i].id) {
+              this.datas.company = this.companyList[i].name;
+            }
+          }
+          if (this.datas.company == '') {
+            this.$Notice.warning({
+              title: '提示',
+              desc: '请选择公司'
+            });
+            return false;
+          }
+          if (this.datas.channel == '') {
+            this.$Notice.warning({
+              title: '提示',
+              desc: '请输入渠道'
+            });
+            return false;
+          }
+          this.modal1 = false;
+          this.$http({
+            method: 'post',
+            url: this.url + '/v1/channel/saveChannel',
+            data: this.datas,
+            success: ((res) => {
+              if (res.data.code == 20000) {
+                this.$Message.success('添加渠道成功');
+                this.channelList()
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        } else {
+          // console.log(this.datas)
+          let k = {};
+          k.companyId = this.datas.companyId;
+          k.channel = this.datas.channel;
+          this.modal1 = false;
+          this.$http({
+            method: 'put',
+            url: this.url + '/v1/channel/updateChannel/' + this.editId,
+            data: k,
+            success: ((res) => {
+              if (res.data.code == 20000) {
+                this.$Message.success('修改渠道成功');
+                this.channelList()
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        }
+      },
+      cancel() {
+        this.modal1 = false;
+        // this.$Message.info('Clicked cancel');
+      },
+      edits(i) {
+        console.log(i)
+        this.company = false;
+        this.datas.companyId = i.row.companyId;
+        this.datas.channel = i.row.channel;
+        this.editId = i.row.id;
+        this.tits = '编辑代理'
+        this.modal1 = true;
+      },
+      modal() {
+        this.datas.companyId = '';
+        this.datas.channel = '';
+        this.datas.company = '';
+        this.company = true;
+        this.tits = '添加代理'
+        this.modal1 = true;
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+
+  .hang {
+    overflow: hidden;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+  .ivu-input{
+    width: 100%!important;
+  }
+</style>

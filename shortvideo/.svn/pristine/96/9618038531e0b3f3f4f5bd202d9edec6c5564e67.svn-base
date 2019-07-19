@@ -1,0 +1,667 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        设备采购记录
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="modal">添加设备采购记录</Button>
+      </div>
+    </div>
+    <div class="hang">
+      <div class="flesx">
+        <span class="qdName">菜单：</span>
+        <Cascader :data="data" v-model="values" class="qdselect" @on-change="selectType"></Cascader>
+      </div>
+      <div class="flesx">
+        <span class="qdName">姓名：</span>
+        <Input v-model="name" placeholder="请输入姓名" class="qdselect"/>
+      </div>
+      <div class="flesx">
+        <span class="qdName">备注：</span>
+        <Input v-model="remark" placeholder="请输入备注" class="qdselect"/>
+      </div>
+    </div>
+    <div class="hang">
+      <div class="flesx">
+        <span class="qdName">开始时间：</span>
+        <DatePicker type="datetime" v-model="startTime" format="yyyy-MM-dd"
+                    placeholder="请选择开始时间"
+                    class="qdselect"></DatePicker>
+      </div>
+      <div class="flesx">
+        <span class="qdName">结束时间：</span>
+        <DatePicker type="datetime" v-model="endTime" format="yyyy-MM-dd"
+                    placeholder="请选择结束时间"
+                    class="qdselect"></DatePicker>
+      </div>
+      <div class="flesx" style="">
+        <Button type="primary" class="subtj" @click="deviceSelect">查询</Button>
+        <!--<Button type="primary" class="subtj" @click="clearSelect">清空选择</Button>-->
+      </div>
+    </div>
+
+    <div class="table">
+      <Table border stripe :columns="columns" :data="datas"></Table>
+      <div class="page">
+        <Page :total="tots" :page-size="limit" show-sizer :page-size-opts="sizes" :current="pages" show-elevator
+              show-total
+              @on-change="pageChange" @on-page-size-change="pageSize"/>
+      </div>
+    </div>
+    <Modal
+      v-model="modals1"
+      :title="tits"
+      @on-ok=""
+      @on-cancel="">
+      <div class="table-task" v-bind="editsave">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            菜单：
+          </span>
+          <Cascader :data="data" v-model="valueSaveEdit" class="qdselect" :value="valueSaveEdit" @on-change="saveEditType"
+                    style="width:200px;display: inline-block"></Cascader>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            名称：
+          </span>
+          <Input placeholder="mc" prefix="ios-star" v-model="editsave.name" style="width: 200px;"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            单价：
+          </span>
+          <Input placeholder="单价" v-model="editsave.price" style="width: 200px;"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            数量：
+          </span>
+          <Input placeholder="数量" v-model="editsave.num" style="width: 200px;"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            时间：
+          </span>
+          <DatePicker type="datetime" v-model="editsave.recordDate" format="yyyy-MM-dd"
+                      placeholder="请选择时间"
+                      class="qdselect" style="width: 200px;"></DatePicker>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            备注：
+          </span>
+          <Input placeholder="备注" v-model="editsave.remark" style="width: 200px;"/>
+        </div>
+      </div>
+      <div slot="footer">
+        <Button type="text" size="large" @click="editsave_cancel">取消</Button>
+        <Button type="primary" size="large" @click="editsave_ok">确定</Button>
+      </div>
+    </Modal>
+  </div>
+</template>
+<script>
+  export default {
+    data() {
+      return {
+        bj: false,
+        fs: false,
+        id:'',
+        tots: 0,
+        page: 1,
+        sizes: [10, 20, 30, 50, 80, 100],
+        limit: 10,
+        pages: 1,
+        tures: false,
+        values: [],
+        firstType: '',
+        secondType: '',
+        name: '',
+        remark: '',
+        startTime: '',
+        endTime: '',
+        datas: [],
+        modals1: false,
+        modals2: false,
+        tits: '',
+        editsave: {
+          firstType: '',
+          secondType: '',
+          name: '',
+          price: "",
+          num: '',
+          totalPrice: '',
+          recordDate: '',
+          remark: '',
+        },
+        valueSaveEdit: [],
+        data: [{
+          value: '1',
+          label: 'CPA',
+          children: [
+            {
+              value: '1',
+              label: '刷分母'
+            },
+            {
+              value: '2',
+              label: 'CPA设备采购'
+            }
+          ]
+        }, {
+          value: '2',
+          label: '泛娱乐',
+          children: [
+            {
+              value: '1',
+              label: '泛娱乐设备采购'
+            }
+          ]
+        }, {
+          value: '3',
+          label: '其他',
+          children: [
+            {
+              value: '1',
+              label: '其他'
+            }
+          ]
+        }],
+        columns: [
+          {
+            title: '分类',
+            // key: 'id',
+            align: 'center',
+            children: [
+              {
+                title: '一级分类',
+                align: 'center',
+                key: 'firstType',
+                render: (h, params) => {
+                  const row = params.row;
+                  return h('div', [
+                    h('span', {}, this.filter(row.firstType)),
+                  ]);
+                }
+              },
+              {
+                title: '二级分类',
+                align: 'center',
+                key: 'secondType',
+                render: (h, params) => {
+                  const row = params.row;
+                  return h('div', [
+                    h('span', {}, this.filters(row.firstType, row.secondType)),
+                  ]);
+                }
+              }
+            ]
+          },
+          {
+            title: '名称',
+            key: 'name',
+            align: 'center',
+          },
+          {
+            title: '价格',
+            key: 'price',
+            align: 'center',
+          },
+          {
+            title: '数量',
+            key: 'num',
+            align: 'center',
+          },
+          {
+            title: '总价',
+            key: 'totalPrice',
+            align: 'center',
+          },
+          {
+            title: '时间',
+            key: 'recordDate',
+            align: 'center',
+          },
+          {
+            title: '备注',
+            key: 'remark',
+            align: 'center',
+          },
+          {
+            title: '状态',
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('i-switch', {
+                  props: {
+                    type: 'primary',
+                    value: params.row.state === 1
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    'on-change': (value) => {
+                      this.switch(params)
+                    }
+                  }
+                },)
+              ]);
+            }
+          },
+          {
+            title: '操作',
+            key: 'action',
+            width: 150,
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('Button', {
+                  props: {
+                    type: 'primary',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.edit(params.row.id)
+                    }
+                  }
+                }, '编辑'),
+              ]);
+            }
+          }
+        ],
+      }
+    },
+    created() {
+
+    },
+    mounted() {
+      this.deviceSelect()
+    },
+    methods: {
+      edit: function (i) {
+        // console.log(i)
+        this.tits = '编辑设备采购记录';
+        this.modals1 = true;
+        this.modals2 = false;
+        this.fs = false;
+        if (this.bj) {
+          return false;
+        }
+        this.bj = true;
+        this.id = i;
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/deviceBuyRecord/findDeviceBuyRecord/'+i,
+          data: this.editsave,
+          success: ((res) => {
+            // console.log(res)
+            if(res.data.code == 20000){
+              // console.log(this.valueSaveEdit)
+              let da = res.data.data;
+              this.editsave.firstType = da.firstType;
+              this.editsave.secondType = da.secondType;
+              this.$set(this.valueSaveEdit,0,da.firstType.toString())
+              this.$set(this.valueSaveEdit,1,da.secondType.toString())
+              this.editsave.price = da.price;
+              this.editsave.name = da.name;
+              this.editsave.num = da.num;
+              this.editsave.totalPrice = da.totalPrice;
+              this.editsave.recordDate = da.recordDate;
+              this.editsave.remark = da.remark;
+              this.bj = false;
+              // console.log(this.valueSaveEdit)
+            }else if(res.data.code == 4001){
+              this.$router.push({path: '/login'});
+              this.bj = false;
+              // this.bj = false;
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          },
+        })
+      },
+      modal: function () {
+        this.fs = false;
+        this.tits = '添加设备采购记录';
+        this.modals1 = true;
+        this.modals2 = true;
+        this.editsave.firstType = '';
+        this.editsave.secondType = '';
+        this.editsave.name = '';
+        this.editsave.price = '';
+        this.editsave.num = '';
+        this.editsave.totalPrice = '';
+        this.editsave.recordDate = '';
+        this.editsave.remark = '';
+      },
+      saveEditType: function (e) {
+        // console.log(e)
+        this.editsave.firstType = e[0];
+        this.editsave.secondType = e[1];
+      },
+      editsave_ok: function () {
+        // this.modals2 = ;
+        if (this.editsave.firstType == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择菜单'
+          });
+          return false;
+        }
+        if (this.editsave.name == '') {
+          this.$Notice.warning({
+            title: '提示',
+            desc: '请选择名称'
+          });
+          return false;
+        }
+        if (this.editsave.price != '') {
+          if (parseFloat(this.editsave.price).toString() == 'NaN') {
+            this.$Notice.warning({
+              title: '提示',
+              desc: '单价必须是数字'
+            });
+            return false;
+          }
+        }
+        if (this.editsave.num != '') {
+          if (parseFloat(this.editsave.num).toString() == 'NaN') {
+            this.$Notice.warning({
+              title: '提示',
+              desc: '数量必须是数字'
+            });
+            return false;
+          }
+        }
+        if (this.editsave.recordDate != '') {
+          this.editsave.recordDate = this.editsave.recordDate.getFullYear() + '-' + this.times(this.editsave.recordDate.getMonth() + 1) + '-' + this.times(this.editsave.recordDate.getDate());
+        }
+        if (this.editsave.price != '' || this.editsave.num != '') {
+          this.editsave.totalPrice = parseInt(this.editsave.num) * parseFloat(this.editsave.price)
+        }
+        this.modals1 = false;
+        if (this.fs) {
+          return false;
+        }
+        this.fs = true;
+        // console.log(this.editsave);
+        if (this.modals2) {  //保存
+          this.$http({
+            method: 'post',
+            url: this.url + '/v1/deviceBuyRecord/saveDeviceBuyRecord',
+            data: this.editsave,
+            success: ((res) => {
+              // console.log(res);
+              if (res.data.code == 20000) {
+                this.$Message.success('添加成功');
+                this.deviceSelect();
+              } else if (res.data.code == 4001) {
+                this.$router.push({path: '/login'});
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        } else {  // 编辑
+          this.$http({
+            method: 'put',
+            url: this.url + '/v1/deviceBuyRecord/updateDeviceBuyRecord/'+this.id,
+            data: this.editsave,
+            success: ((res) => {
+              // console.log(res);
+              if (res.data.code == 20000) {
+                this.$Message.success('修改成功');
+                this.deviceSelect();
+              } else if (res.data.code == 4001) {
+                this.$router.push({path: '/login'});
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        }
+      },
+      editsave_cancel: function () {
+        this.modals1 = false;
+      },
+      switch: function (pa) {
+        // console.log(pa)
+        let state = pa.row.state;
+        let id = pa.row.id;
+        if (state == 0) {
+          this.$http({
+            method: 'put',
+            url: this.url + '/v1/deviceBuyRecord/updateDeviceBuyRecordState/' + id + '/1',
+            success: ((res) => {
+              // console.log(res)
+              if (res.data.code == 20000) {
+                this.$Message.success('修改成功');
+                this.deviceSelect();
+                // console.log(this.taskTypeSelect)
+              } else if (res.data.code == 4001) {
+                this.$router.push({path: '/login'});
+              } else {
+                this.$Message.warning(res.data.msg);
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        } else {
+          this.$http({
+            method: 'put',
+            url: this.url + '/v1/deviceBuyRecord/updateDeviceBuyRecordState/' + id + '/0',
+            success: ((res) => {
+              // console.log(res)
+              if (res.data.code == 20000) {
+                this.$Message.success('修改成功');
+                this.deviceSelect();
+              } else if (res.data.code == 4001) {
+                this.$router.push({path: '/login'});
+              } else {
+                this.$Message.warning(res.data.msg);
+              }
+            }),
+            error: function (err) {
+              console.log(err);
+            },
+          })
+        }
+      },
+      deviceSelect: function () {
+        let t1, t2;
+        if (this.startTime == '') {
+          t1 = '';
+        } else {
+          t1 = this.startTime.getFullYear() + '-' + this.times(this.startTime.getMonth() + 1) + '-' + this.times(this.startTime.getDate());
+        }
+        if (this.endTime == '') {
+          t2 = '';
+        } else {
+          t2 = this.endTime.getFullYear() + '-' + this.times(this.endTime.getMonth() + 1) + '-' + this.times(this.endTime.getDate());
+        }
+        this.firstType = ((this.firstType == 'undefined' || this.firstType == undefined) ? '' : this.firstType);
+        this.secondType = ((this.secondType == 'undefined' || this.secondType == undefined) ? '' : this.secondType);
+        if (this.tures) {
+          this.pages = this.page
+        } else {
+          this.pages = 1;
+        }
+        this.$http({
+          method: 'get',
+          url: this.url + '/v1/deviceBuyRecord/findDeviceBuyRecordList?page=' + this.page + '&limit=' + this.limit + '&firstType=' + this.firstType + '&secondType=' + this.secondType + '&name=' + this.name + '&remark=' + this.remark + '&startTime=' + t1 + '&endTime=' + t2,
+          data: {},
+          success: ((res) => {
+            // console.log(res)
+            if (res.data.code == 20000) {
+              this.tots = res.data.count;
+              this.datas = res.data.data;
+              this.page = 1;
+              this.tures = false;
+              // console.log(this.taskTypeSelect)
+            } else if (res.data.code == 20003) {
+              this.tots = 0;
+              this.datas = [];
+              this.tures = false;
+            } else if (res.data.code == 4001) {
+              this.$router.push({path: '/login'});
+            } else {
+              this.$Message.warning(res.data.msg);
+            }
+          }),
+          error: function (err) {
+            console.log(err);
+          }
+        })
+
+      },
+      selectType: function (e) {
+        // console.log(this.values)
+        this.firstType = e[0];
+        this.secondType = e[1];
+      },
+      pageChange: function (e) {
+        this.page = e;
+        // this.tures = true;
+        this.deviceSelect()
+      },
+      pageSize: function (e) {
+        this.limit = e;
+        this.page = 1;
+        // this.deviceTaskChannelList()
+      },
+      times: function (i) {
+        if (i < 10) {
+          return "0" + i
+        } else {
+          return i;
+        }
+      },
+
+      delete: function (i) {
+
+      },
+      filter: function (i) {
+        if (i == 1) {
+          return 'CPA';
+        } else if (i == 2) {
+          return '泛娱乐';
+        } else if (i == 3) {
+          return '其他';
+        } else {
+          return '没有匹配';
+        }
+      },
+      filters: function (i, j) {
+        if (i == 1) {
+          if (j == 1) {
+            return '刷分母';
+          } else if (j == 2) {
+            return 'CPA设备采购';
+          } else {
+            return '没有匹配';
+          }
+        } else if (i == 2) {
+          if (j == 1) {
+            return '泛娱乐设备采购';
+          } else {
+            return '没有匹配';
+          }
+        } else if (i == 3) {
+          if (j == 1) {
+            return '其他';
+          } else {
+            return '没有匹配';
+          }
+        } else {
+          return '没有匹配';
+        }
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 50px;
+      line-height: 40px;
+      border-bottom: 1px solid #cccccc;
+      margin-bottom: 10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+
+  .page {
+    padding-top: 20px;
+  }
+
+  .table-task {
+    .task-cz {
+      margin-bottom: 8px;
+      .task-cz-name {
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+
+  .hang {
+    display: flex;
+    width: 100%;
+    overflow: hidden;
+    margin-bottom: 12px;
+    .flesx {
+      flex: 1;
+    }
+    .qdName {
+      display: block;
+      float: left;
+      line-height: 30px;
+      width: 100px;
+      text-align: right;
+      letter-spacing: 2px;
+    }
+    .qdselect, .start {
+      display: block;
+      float: left;
+      width: 200px;
+      margin-right: 30px;
+    }
+  }
+
+  .ivu-input {
+    width: 100% !important;
+  }
+
+  .subtj {
+    text-align: left;
+  }
+
+  /*.ivu-input-prefix .ivu-icon{*/
+  /*color:red!important;*/
+  /*}*/
+</style>

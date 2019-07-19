@@ -1,0 +1,214 @@
+<template>
+  <div class="tabs">
+    <div class="tabs-top">
+      <div class="tabs-top-name">
+        代理列表
+      </div>
+      <div class="tabs-top-addTask">
+        <Button type="info" @click="modal">添加代理</Button>
+      </div>
+    </div>
+    <Table border stripe :columns="columns" :data="data"></Table>
+    <div class="page">
+      <Page :total="100" show-sizer/>
+    </div>
+    <Modal
+      v-model="modal1"
+      :title="tits"
+      @on-ok="ok"
+      @on-cancel="cancel">
+      <div class="table-task">
+        <div class="task-cz">
+          <span class="task-cz-name">
+            代理类型：
+          </span>
+          <RadioGroup>
+            <Radio label="无类型"></Radio>
+            <Radio label="无极"></Radio>
+            <Radio label="太阳"></Radio>
+          </RadioGroup>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            名称：
+          </span>
+          <Input prefix="ios-star" placeholder="类型" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            密码：
+          </span>
+          <Input prefix="ios-star" placeholder="类型名称" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            可用的设备信息：
+          </span>
+          <Input placeholder="用户表名" style="width: auto"/>
+        </div>
+        <div class="task-cz">
+          <span class="task-cz-name">
+            结束时间：
+          </span>
+          <Input prefix="ios-star" placeholder="用户表名" style="width: auto"/>
+        </div>
+      </div>
+    </Modal>
+  </div>
+</template>
+
+<script>
+  export default {
+    data() {
+      return {
+        modal1: false,
+        tits: '',
+        idshow: false,
+        columns: [
+          {
+            title: '代理类型',
+            key: 'age',
+            width:90,
+            align: 'center'
+          },
+          {
+            title: '名称',
+            key: 'address',
+            align: 'center'
+          },
+          {
+            title: '密码',
+            key: 'address',
+            align: 'center'
+          },
+          {
+            title: '可用的设备信息',
+            key: 'address',
+            // width:700,
+            align: 'center'
+          },
+          {
+            title: '添加时间',
+            key: 'time',
+            align: 'center'
+          },
+          {
+            title: '结束时间',
+            key: 'time1',
+            align: 'center'
+          },
+          {
+            title: '操作',
+            key: 'action',
+            width: 100,
+            align: 'center',
+            render: (h, params) => {
+              return h('div', [
+                h('Button', {
+                  props: {
+                    type: 'primary',
+                    size: 'small'
+                  },
+                  style: {
+                    marginRight: '5px'
+                  },
+                  on: {
+                    click: () => {
+                      this.show(params.index)
+                    }
+                  }
+                }, '编辑'),
+              ]);
+            }
+          }
+        ],
+        data: [
+          {
+            name: 'John Brown',
+            age: 18,
+            address: 'New York No. 1 Lake Park',
+            time:'2018-01-01 00:00:00',
+            time1:'2018-01-01 23:59:59',
+          },
+          {
+            name: 'Jim Green',
+            age: 24,
+            address: 'London No. 1 Lake Park',
+            time:'2018-01-01 00:00:00',
+            time1:'2018-01-01 23:59:59',
+          },
+          {
+            name: 'Joe Black',
+            age: 30,
+            address: 'Sydney No. 1 Lake Park',
+            time:'2018-01-01 00:00:00',
+            time1:'2018-01-01 23:59:59',
+          },
+          {
+            name: 'Jon Snow',
+            age: 26,
+            address: 'Ottawa No. 2 Lake Park',
+            time:'2018-01-01 00:00:00',
+            time1:'2018-01-01 23:59:59',
+          }
+        ]
+      }
+    },
+    created() {
+
+    },
+    methods: {
+      ok() {
+        this.$Message.info('Clicked ok');
+      },
+      cancel() {
+        this.$Message.info('Clicked cancel');
+      },
+      show(i) {
+        this.idshow = true;
+        this.tits = '编辑代理'
+        this.modal1 = true;
+        console.log(i)
+      },
+      modal() {
+        this.idshow = false;
+        this.tits = '添加代理'
+        this.modal1 = true;
+
+      }
+    }
+  }
+</script>
+
+<style scoped lang="less">
+  .tabs {
+    width: 100%;
+    height: 100%;
+    background-color: #f6f6f6;
+    padding: 10px;
+    .tabs-top {
+      width: 100%;
+      height: 40px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+  }
+  .page{
+    padding-top: 20px;
+  }
+  .table-task{
+    .task-cz{
+      margin-bottom: 8px;
+      .task-cz-name{
+        width: 100px;
+        text-align: right;
+        display: inline-block;
+      }
+    }
+  }
+</style>

@@ -1,0 +1,329 @@
+<template>
+  <div class="Monitor">
+     <div class="tabs-top">
+        <div class="tabs-top-name">
+          用户数据监控
+        </div>
+        <div class="tabs-top-addTask">
+          <Button type="info" @click="add">添加</Button>
+        </div>
+      </div>
+          <Modal
+            v-model="modal"
+            title="添加"
+            @on-ok=""
+          >
+            <div class="table-task">
+              <div class="task-cz">
+                <span class="task-cz-name">
+                  任务类型：
+                </span>
+                <Select v-model.trim="select2" multiple filterable class="qdselect2">
+                  <Option v-for="item in model_select2" :value="item.value" :key="item.value">{{ item.label }}</Option>
+                </Select>
+              </div>
+            </div>
+             <div slot="footer">
+              <Button type="text" size="large"  @click="cancel">取消</Button>
+              <Button type="primary" size="large"  @click="ok">确定</Button>
+            </div>
+          </Modal>
+       <Modal
+          title="提示"
+          v-model="modal_remove"
+          @on-ok="okremove"
+          >
+          <p>确定删除吗?</p>
+      </Modal>
+          <div class="hang">
+              <span class="qdName">任务类型：</span>
+               <Select v-model.trim="select" clearable filterable class="qdselect">
+                <Option v-for="item in model_select" :value="item.value" :key="item.value">{{ item.label }}</Option>
+              </Select>
+              <Button type="primary" class="qdthree" @click="search">查询</Button>
+          </div>
+          <div class="table">
+            <Table stripe :columns="columns" :data="data"></Table>
+          </div>
+
+          <div class="pagediv">
+             <Page :total="zongcount" :page-size="optsarr[0]" show-elevator show-total show-sizer :page-size-opts='optsarr' @on-change="changepage" @on-page-size-change="pagesizechange"/>
+          </div>
+        
+  </div>
+</template>
+
+<script>
+export default {
+  name: 'Monitor',
+  data () {
+    return {
+       disab:false,
+       modal:false,
+       deleteId:'',
+       modal_remove:false,
+       page:1,
+       limit:0,
+       optsarr:[10,20,30,50,80,100],
+       zongcount:0,
+       select:'',
+       select2:'',
+       model_select2:[],
+       model_select:[],
+       columns:[
+                  {
+                      title: '类型名称',
+                      align:'center',
+                      key: 'typename',
+                  },
+                  {
+                      title: '用户表名',
+                      align:'center',
+                      key: 'username',
+                  },
+                  {
+                      title: '可用用户数',
+                      align:'center',
+                      key: 'kyusernum',
+                  },
+                  {
+                      title: '创建时间',
+                      align:'center',
+                      key: 'time',
+                  },
+                   {
+                        title: '操作',
+                        key: 'key15',
+                        width: 260,
+                        align: 'center',
+                        render: (h, params) => {
+                            return h('div', [
+                                h('Button', {
+                                    props: {
+                                        type: 'warning',
+                                        size: 'small'
+                                    },
+                                    style: {
+                                        marginRight: '5px'
+                                    },
+                                    on: {
+                                        click: () => {
+                                            this.remove(params)
+                                        }
+                                    }
+                                }, '删除'),   
+                            ]);
+                            
+                            
+                        }
+                    }
+              ],
+      data:[],
+    }
+  },
+  components: { // 定义组件
+
+  },
+  created:function(){
+    this.limit=(this.optsarr)[0];
+    var _this=this;
+      this.$http({
+            method:'get',
+            url:this.url+'/v1/taskType/findTaskTypeMonitor',
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                   if(response.data.data.length>0){
+                       var d=response.data.data;
+                       for(var i=0;i<d.length;i++){
+                          var obj={};
+                          obj.value=d[i].id;
+                          obj.label=d[i].name;
+                          (_this.model_select).push(obj);
+                          (_this.model_select2).push(obj);
+                       }
+                   }
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        });
+        this.search();
+  },
+  methods:{
+    add:function(){
+       this.select2='';
+       this.modal=true;
+       this.disab=false;
+    },
+    cancel:function(){
+       this.modal=false;
+    },
+    ok:function(){
+      var _this=this;
+      if(this.disab){
+        return false;
+      }
+      this.disab=true;
+      this.modal=false;
+      this.$http({
+            method:'post',
+            url:this.url+'/v1/monitor/saveMonitor',
+            data:this.select2,
+            success:function(response){
+                if(response.data.code==20000){
+                  _this.$Message.success('添加成功！');
+                  _this.page=1;
+                  _this.search();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        });
+    },
+    remove:function(params){
+        this.modal_remove=true;
+        this.deleteId=params.row.id;
+    },
+    okremove:function(){
+         var _this=this;
+         this.$http({
+            method:'put',
+            url:this.url+'/v1/monitor/deleteMonitor/'+this.deleteId,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                  _this.$Message.success('删除成功！');
+                  _this.page=1;
+                  _this.search();
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        });
+    },
+    changepage:function(v){
+        this.page=v;
+        this.search();
+    },
+     pagesizechange:function(v){
+        this.limit=v;
+        this.page=1;
+        this.search();
+      },
+     search:function(){
+       var _this=this;
+       _this.data=[];
+       if(this.select==undefined || this.select=='undefined'){
+         this.select=''; 
+       }
+       this.$http({
+            method:'get',
+            url:this.url+'/v1/monitor/findMonitorList?page='+this.page+'&limit='+this.limit+'&taskTypeId='+this.select,
+            data:{},
+            success:function(response){
+                if(response.data.code==20000){
+                  _this.zongcount=response.data.count;
+                  if(response.data.data.length>0){
+                     var d=response.data.data;
+                     for(var i=0;i<d.length;i++){
+                       var obj={};
+                       obj.id=d[i].id;
+                       obj.typename=d[i].typeName;
+                       obj.username=d[i].userDataTable;
+                       obj.kyusernum=d[i].usableUserCount;
+                       obj.time=_this.$time(d[i].addtime);
+                       (_this.data).push(obj);
+                     }
+                  }
+                }else if(response.data.code==4001){
+                     _this.$router.push({path:'/login'});
+                }else{
+                     _this.$Message.warning(response.data.msg);
+                }
+            },
+            error:function(err){
+                console.log(err);
+            },
+        })
+     },
+ },
+  computed:{
+
+	},
+}
+</script>
+<style scoped lang='less'>
+ .Monitor{
+   padding:10px;
+ }
+ .hang{
+  overflow:hidden;
+  margin-top:30px;
+  .qdName{
+    display:block;
+    float:left;
+    line-height:30px;
+    width:100px;
+    text-align:right;
+    letter-spacing:2px;
+  }
+  .qdthree{
+    float:left;
+  }
+  .qdselect{
+  display:block;
+  float:left;
+  width:200px;
+  margin-right:30px;
+  }
+}
+.table{
+  margin-top:30px;
+}
+.pagediv{
+  margin:30px 0 0 30px;
+}
+  .tabs-top {
+      width: 100%;
+      height: 50px;
+      border-bottom:solid 1px #cccccc;
+      line-height:40px;
+      padding-bottom:10px;
+      .tabs-top-name {
+        font-size: 18px;
+        float: left;
+      }
+      .tabs-top-addTask {
+        float: right;
+      }
+    }
+.task-cz{
+  overflow: hidden;
+  .task-cz-name{
+    float:left;
+    font-size:14px;
+    line-height:30px;
+  }
+  .qdselect2{
+    float:left;
+    width:200px;
+    margin-left:10px;
+  }
+}
+</style>

@@ -1,0 +1,2 @@
+var url='http://114.55.235.183:9090';
+module.exports=url;

@@ -1,0 +1,70 @@
+import Vue from 'vue'
+import Vuex from 'vuex'
+import axios from 'axios'
+
+Vue.use(Vuex)
+import A from './A'
+const state = {
+  num2: 102,
+}  
+
+const mutations = {
+  add(state){
+      state.num+=1;
+  }
+}
+
+const actions = {
+}
+const store = new Vuex.Store({
+  state,
+  mutations,
+  actions,
+    // 模块化
+    modules: {
+        A: A,
+    }
+  });
+  export default store;
+
+
+
+
+
+  /*export default new Vuex.Store({
+
+  state: {
+    num: 100,
+  },
+  getters: {
+   
+  },
+  mutations: {
+    add(state){
+      axios.get('https://pq.hzcanf.com/user/userCouponCount.wckj', {
+        'userId':'10245593',
+        'uuid':'a181e878-ba93-49f1-8242-609ea7173b64',
+        't':'1539681512000',
+        'v':'A1.0.0',
+        'h':'1b3b37804887db20c390413a21ee7808',
+        'c':'B0000',
+        'token':'0536ca6ec68145e090f5120342bd548f',
+      },{emulateJSON: true})
+      .then(response => {
+        console.log(response.data)
+        commit('getList', {
+          res: response.data,
+          type :'listLi' 
+        })
+      }, response => {
+        console.log('error')
+      })
+
+    }
+  },
+  actions: {
+   
+  }
+ 
+ 
+}) */
